@@ -1,0 +1,129 @@
+/* Resumen del pasajero. Colores --rd-* en global.scss. */
+
+ion-content.resumen-pas {
+  --background: var(--rd-fondo);
+}
+
+h2,
+p {
+  margin: 0;
+}
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--rd-superficie);
+
+  span {
+    font-size: 12px;
+    color: var(--rd-suave);
+  }
+
+  strong {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+}
+
+.tarjeta {
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--rd-superficie);
+
+  h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  &.lista {
+    padding: 16px 0 4px;
+
+    h2 {
+      padding: 0 16px;
+      margin-bottom: 4px;
+    }
+  }
+}
+
+.barras {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  align-items: end;
+  gap: 10px;
+  height: 160px;
+}
+
+.barra {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  height: 100%;
+
+  .valor {
+    font-size: 10px;
+    color: var(--rd-suave);
+    white-space: nowrap;
+  }
+
+  .columna {
+    width: 100%;
+    max-width: 36px;
+    border-radius: 6px 6px 2px 2px;
+    background: var(--rd-primario);
+
+    &.vacia {
+      background: var(--rd-linea);
+    }
+  }
+
+  .mes {
+    font-size: 12px;
+    color: var(--rd-suave);
+  }
+}
+
+.frecuente {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rd-linea);
+  font-size: 14px;
+  color: var(--rd-suave);
+
+  strong {
+    color: var(--rd-tinta);
+  }
+}
+
+.vacio {
+  padding: 16px;
+  font-size: 14px;
+  color: var(--rd-suave);
+}
+
+@media (max-width: 420px) {
+  .kpi strong {
+    font-size: 17px;
+  }
+}

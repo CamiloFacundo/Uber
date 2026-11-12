@@ -1,0 +1,208 @@
+<ion-content class="pas" [fullscreen]="true" [scrollY]="true">
+  <!-- Mapa -->
+  <div class="pas-mapa">
+    <app-mapa
+      [origen]="mapaOrigen()"
+      [destino]="mapaDestino()"
+      [conductor]="mapaConductor()"
+      [yo]="miPosicion()"
+      (toque)="tocarMapa($event)"
+    ></app-mapa>
+
+    <p class="pas-saludo">Hola, {{ primerNombre() }}</p>
+
+    @if (eta(); as e) {
+      <div class="pas-eta" aria-live="polite">
+        <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+        <div>
+          <span>{{ e.titulo }}</span>
+          <strong>{{ e.min }} min</strong>
+        </div>
+      </div>
+    }
+
+    <button type="button" class="pas-gps" (click)="usarMiUbicacion()" [disabled]="ubicando()" aria-label="Usar mi ubicación">
+      @if (ubicando()) {
+        <ion-spinner name="crescent"></ion-spinner>
+      } @else {
+        <ion-icon name="locate"></ion-icon>
+      }
+    </button>
+  </div>
+
+  <!-- Hoja inferior -->
+  <section class="hoja">
+    <span class="agarradera" aria-hidden="true"></span>
+
+    @if (viaje(); as v) {
+      <!-- ============ Viaje en curso ============ -->
+      <div class="estado-viaje">
+        <span class="insignia" [attr.data-color]="estado().color">{{ estado().texto }}</span>
+        <strong class="tarifa">{{ (v.final_fare ?? v.estimated_fare) | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+
+      @if (v.status === 'requested') {
+        <div class="buscando-conductor">
+          <span class="pulso" aria-hidden="true"></span>
+          <div>
+            <strong>Buscando un conductor cercano</strong>
+            <p>Te avisamos aquí cuando alguien acepte tu viaje.</p>
+          </div>
+        </div>
+      }
+
+      @if (v.driver; as d) {
+        <div class="conductor">
+          <span class="avatar" aria-hidden="true">{{ d.user.name.charAt(0) }}</span>
+          <div class="conductor-datos">
+            <strong>{{ d.user.name }}</strong>
+            <span>
+              @if (d.rating_average) {
+                <ion-icon name="star"></ion-icon> {{ d.rating_average | number: '1.1-1' }}
+              }
+              @if (v.vehicle) {
+                &nbsp;{{ v.vehicle.brand }} {{ v.vehicle.model }}, {{ v.vehicle.color }}
+              }
+            </span>
+          </div>
+          @if (v.vehicle) {
+            <span class="placa">{{ v.vehicle.plate }}</span>
+          }
+        </div>
+      }
+
+      <div class="recorrido">
+        <div class="parada"><span class="punto origen" aria-hidden="true"></span>{{ nombreOrigen() }}</div>
+        <div class="parada"><span class="punto destino" aria-hidden="true"></span>{{ nombreDestino() }}</div>
+      </div>
+
+      <div class="acciones">
+        @if (telefonoConductor(); as tel) {
+          <a class="boton secundario" [href]="tel"><ion-icon name="call"></ion-icon> Llamar</a>
+        }
+        @if (v.driver) {
+          <button type="button" class="boton secundario" (click)="compartir()"><ion-icon name="share-social-outline"></ion-icon> Compartir viaje</button>
+        }
+        @if (puedeCancelar()) {
+          <button type="button" class="boton peligro" (click)="cancelar()"><ion-icon name="close-circle"></ion-icon> Cancelar</button>
+        }
+      </div>
+    } @else {
+      @if (porCalificar(); as v) {
+        <!-- ============ Calificar ============ -->
+        <div class="calificar">
+          <div class="calificar-cabeza">
+            <div>
+              <strong>¿Cómo estuvo tu viaje?</strong>
+              <p>Con {{ v.driver?.user?.name ?? 'tu conductor' }}</p>
+            </div>
+            <button type="button" class="cerrar" (click)="cerrarCalificacion()" aria-label="Calificar después">
+              <ion-icon name="close"></ion-icon>
+            </button>
+          </div>
+          <div class="estrellas">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <button type="button" (click)="estrellas.set(i)" [attr.aria-label]="i + ' estrellas'" [attr.aria-pressed]="i <= estrellas()">
+                <ion-icon [name]="i <= estrellas() ? 'star' : 'star-outline'"></ion-icon>
+              </button>
+            }
+          </div>
+          <ion-textarea class="comentario" placeholder="Cuéntanos algo (opcional)" [(ngModel)]="comentario" [autoGrow]="true" fill="outline"></ion-textarea>
+          <ion-checkbox [(ngModel)]="incidente" labelPlacement="end">Hubo un problema en el viaje</ion-checkbox>
+          <button type="button" class="boton principal" (click)="enviarCalificacion()">Enviar calificación</button>
+        </div>
+      }
+
+      <!-- ============ Pedir viaje ============ -->
+      <h1>¿A dónde vas?</h1>
+
+      <div class="ruta-campos">
+        <div class="ruta-campo">
+          <span class="punto origen" aria-hidden="true"></span>
+          @if (origen() && !esDeLista(origen())) {
+            <span class="valor">{{ origen()!.nombre }}</span>
+            <button type="button" class="quitar" (click)="limpiar('origen')" aria-label="Quitar origen"><ion-icon name="close"></ion-icon></button>
+          } @else {
+            <ion-select
+              aria-label="Origen"
+              placeholder="¿Dónde te recogemos?"
+              interface="action-sheet"
+              [value]="origen()?.nombre ?? null"
+              (ionChange)="elegirDeLista('origen', $event.detail.value)"
+            >
+              @for (l of lugares; track l.nombre) {
+                <ion-select-option [value]="l.nombre">{{ l.nombre }}</ion-select-option>
+              }
+            </ion-select>
+          }
+        </div>
+        <div class="ruta-campo">
+          <span class="punto destino" aria-hidden="true"></span>
+          @if (destino() && !esDeLista(destino())) {
+            <span class="valor">{{ destino()!.nombre }}</span>
+            <button type="button" class="quitar" (click)="limpiar('destino')" aria-label="Quitar destino"><ion-icon name="close"></ion-icon></button>
+          } @else {
+            <ion-select
+              aria-label="Destino"
+              placeholder="¿A dónde vas?"
+              interface="action-sheet"
+              [value]="destino()?.nombre ?? null"
+              (ionChange)="elegirDeLista('destino', $event.detail.value)"
+            >
+              @for (l of lugares; track l.nombre) {
+                <ion-select-option [value]="l.nombre">{{ l.nombre }}</ion-select-option>
+              }
+            </ion-select>
+          }
+        </div>
+      </div>
+      <p class="pista">También puedes tocar el mapa: primero el punto de recogida y después el destino.</p>
+
+      @if (recientes().length) {
+        <div class="recientes">
+          <span class="recientes-titulo"><ion-icon name="time-outline"></ion-icon> Recientes</span>
+          <div class="chips">
+            @for (r of recientes(); track r.nombre) {
+              <button type="button" (click)="elegirReciente(r)">{{ r.nombre }}</button>
+            }
+          </div>
+        </div>
+      }
+
+      @if (estimando()) {
+        <p class="calculando"><ion-spinner name="dots"></ion-spinner> Calculando la tarifa</p>
+      }
+      @if (estimacion(); as e) {
+        <p class="resumen-ruta">{{ e.distance_km | number: '1.1-1' }} km, unos {{ e.duration_min }} min de viaje</p>
+
+        <div class="categorias" role="radiogroup" aria-label="Tipo de viaje">
+          @for (c of categorias; track c.id) {
+            <button
+              type="button"
+              class="categoria"
+              role="radio"
+              [attr.aria-checked]="categoria() === c.id"
+              [class.elegida]="categoria() === c.id"
+              (click)="categoria.set(c.id)"
+            >
+              <span class="categoria-icono" aria-hidden="true"><ion-icon [name]="c.icono"></ion-icon></span>
+              <span class="categoria-texto">
+                <strong>{{ c.nombre }}</strong>
+                <span>{{ c.detalle }}</span>
+              </span>
+              <strong class="categoria-precio">{{ precio(c) | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+            </button>
+          }
+        </div>
+      }
+
+      <button type="button" class="boton principal" [disabled]="enviando() || !estimacion()" (click)="pedirViaje()">
+        @if (enviando()) {
+          <ion-spinner name="crescent"></ion-spinner>
+        } @else {
+          Solicitar viaje
+        }
+      </button>
+    }
+  </section>
+</ion-content>

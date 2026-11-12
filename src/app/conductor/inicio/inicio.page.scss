@@ -1,0 +1,559 @@
+/*
+ * Panel del conductor. Los colores (--rd-*) y la letra están definidos en global.scss.
+ */
+
+ion-content.cd {
+  --background: var(--rd-fondo);
+  --color: var(--rd-tinta);
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 0;
+  --padding-bottom: 24px;
+  font-family: var(--rd-letra);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ---------- Saludo ---------- */
+.saludo {
+  padding: calc(env(safe-area-inset-top) + 20px) 4px 12px;
+
+  p {
+    font-size: 15px;
+    color: var(--rd-suave);
+  }
+}
+
+/* ---------- Franja de estado (el elemento protagonista) ---------- */
+.estado {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 20px;
+  border: 0;
+  border-radius: 20px;
+  text-align: left;
+  color: var(--rd-tinta);
+  background: var(--rd-superficie);
+  box-shadow: inset 0 0 0 2px var(--rd-linea);
+  cursor: pointer;
+  transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+
+  &.en-linea {
+    color: var(--rd-sobre-primario);
+    background: var(--rd-rio);
+    box-shadow: none;
+  }
+
+  &.bloqueado {
+    cursor: default;
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--rd-sol);
+    outline-offset: 3px;
+  }
+}
+
+.estado-texto {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  strong {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+
+  span {
+    font-size: 14px;
+    opacity: 0.85;
+  }
+}
+
+.estado-boton {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  font-size: 26px;
+  color: var(--rd-suave);
+  background: var(--rd-fondo);
+
+  .en-linea & {
+    color: var(--rd-rio);
+    background: #ffffff;
+  }
+
+  ion-spinner {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* ---------- Recorrido: un tramo de vía con línea central punteada ---------- */
+.ruta {
+  --ruta-pad-x: 0px;
+  --ruta-pad-y: 0px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  // la vía entre los dos puntos (centrada bajo los puntos de 20px)
+  &::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--ruta-pad-x) + 7px);
+    top: calc(var(--ruta-pad-y) + 14px);
+    bottom: calc(var(--ruta-pad-y) + 14px);
+    width: 6px;
+    border-radius: 3px;
+    background:
+      repeating-linear-gradient(to bottom, var(--rd-sol) 0 5px, transparent 5px 10px) center / 2px 100% no-repeat,
+      var(--rd-asfalto);
+  }
+
+  &.compacta {
+    gap: 10px;
+    --ruta-pad-y: -4px;
+
+    p {
+      font-size: 15px;
+    }
+  }
+}
+
+.parada {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+
+  p {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+}
+
+.rotulo {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 13px;
+  color: var(--rd-suave);
+}
+
+.punto {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+
+  &.origen {
+    border-radius: 50%;
+    border: 5px solid var(--rd-rio);
+    background: var(--rd-superficie);
+  }
+
+  // destino: un cuadro como señal de tránsito
+  &.destino {
+    border-radius: 4px;
+    background: var(--rd-sol);
+    box-shadow: inset 0 0 0 4px var(--rd-sol), inset 0 0 0 7px var(--rd-tinta);
+  }
+}
+
+/* ---------- Viaje en curso ---------- */
+.viaje {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pasos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    padding-top: 10px;
+    border-top: 5px solid var(--rd-linea);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--rd-suave);
+  }
+
+  .hecho {
+    border-color: var(--rd-rio);
+    color: var(--rd-tinta);
+  }
+
+  .actual {
+    border-color: var(--rd-sol);
+    color: var(--rd-tinta);
+  }
+}
+
+.instruccion {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.cifras {
+  display: flex;
+  gap: 24px;
+
+  div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  strong {
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--rd-suave);
+  }
+}
+
+.viaje .ruta {
+  --ruta-pad-x: 18px;
+  --ruta-pad-y: 20px;
+  padding: 20px 18px;
+  border-radius: 16px;
+  background: var(--rd-superficie);
+}
+
+.pasajero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--rd-superficie);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--rd-tinta);
+  background: var(--rd-rio-suave);
+}
+
+.pasajero-nombre {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  strong {
+    font-size: 17px;
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--rd-suave);
+  }
+}
+
+.llamar {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 22px;
+  color: #ffffff;
+  background: var(--rd-rio);
+
+  &:focus-visible {
+    outline: 3px solid var(--rd-sol);
+    outline-offset: 2px;
+  }
+}
+
+.enlace-cancelado {
+  align-self: center;
+  padding: 8px;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  color: var(--rd-alerta);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* ---------- Solicitudes ---------- */
+.titulo-lista {
+  margin: 28px 4px 12px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.solicitud {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--rd-superficie);
+}
+
+.solicitud-cabeza {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tarifa {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.distancia {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--rd-suave);
+}
+
+.solicitud-cliente {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--rd-suave);
+}
+
+/* ---------- Botones de acción ---------- */
+.accion {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--rd-sobre-cta);
+  background: var(--rd-cta);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  &:active:not(:disabled) {
+    filter: brightness(0.92);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--rd-sol);
+    outline-offset: 2px;
+  }
+
+  &.grande {
+    min-height: 60px;
+    font-size: 18px;
+  }
+
+  ion-spinner {
+    color: var(--rd-sobre-cta);
+  }
+}
+
+ion-footer.cd-pie {
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--rd-fondo);
+  font-family: var(--rd-letra);
+  box-shadow: 0 -1px 0 var(--rd-linea);
+}
+
+/* ---------- Esperando solicitudes (única animación de la pantalla) ---------- */
+.esperando,
+.desconectado {
+  padding: 48px 12px 0;
+
+  h2 {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--rd-suave);
+    max-width: 34ch;
+  }
+}
+
+.esperando {
+  padding-top: 72px;
+  text-align: center;
+
+  p {
+    margin: 0 auto;
+  }
+}
+
+.radar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  font-size: 32px;
+  color: #ffffff;
+  background: var(--rd-rio);
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--rd-rio);
+    animation: pulso 2.4s ease-out infinite;
+  }
+
+  &::after {
+    animation-delay: 1.2s;
+  }
+}
+
+@keyframes pulso {
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar::before,
+  .radar::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  .estado {
+    transition: none;
+  }
+}
+
+.desconectado .nota {
+  margin-top: 16px;
+  padding: 12px 14px;
+  font-size: 14px;
+  border-radius: 12px;
+  background: var(--rd-superficie);
+}
+
+/* ---------- Mapa ---------- */
+.mapa-tarjeta {
+  height: 200px;
+  margin-top: 16px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--rd-superficie);
+
+  &.alto {
+    height: 260px;
+  }
+}
+
+/* ---------- Resumen del día ---------- */
+.resumen {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border-radius: 14px;
+    background: var(--rd-superficie);
+  }
+
+  span {
+    font-size: 12px;
+    color: var(--rd-suave);
+  }
+
+  strong {
+    font-size: 17px;
+    font-weight: 700;
+  }
+}
+
+/* ---------- Navegar con otra app ---------- */
+.navegar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.boton-navegar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  border: 1px solid var(--rd-linea);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--rd-tinta);
+  background: var(--rd-superficie);
+
+  &:focus-visible {
+    outline: 2px solid var(--rd-primario);
+    outline-offset: 2px;
+  }
+}

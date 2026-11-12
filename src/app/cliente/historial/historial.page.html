@@ -1,0 +1,58 @@
+<ion-header>
+  <ion-toolbar color="dark"><ion-title>Mis viajes</ion-title></ion-toolbar>
+</ion-header>
+
+<ion-content class="resumen-pas">
+  <div class="contenido">
+    <!-- Indicadores -->
+    <section class="kpis" aria-label="Resumen">
+      <div class="kpi">
+        <span>Viajes realizados</span>
+        <strong>{{ completados().length }}</strong>
+      </div>
+      <div class="kpi">
+        <span>Total gastado</span>
+        <strong>{{ totalGastado() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+      <div class="kpi">
+        <span>Promedio por viaje</span>
+        <strong>{{ promedio() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+    </section>
+
+    <!-- Gasto por mes -->
+    <section class="tarjeta">
+      <h2>Gasto de los últimos 6 meses</h2>
+      <div class="barras" role="img" aria-label="Gráfica de gasto por mes">
+        @for (m of meses(); track m.clave) {
+          <div class="barra">
+            <span class="valor">{{ m.total ? (m.total | currency: 'COP' : 'symbol-narrow' : '1.0-0') : '' }}</span>
+            <span class="columna" [style.height.%]="m.alto || 2" [class.vacia]="!m.total"></span>
+            <span class="mes">{{ m.nombre }}</span>
+          </div>
+        }
+      </div>
+      @if (destinoFrecuente(); as d) {
+        <p class="frecuente">Tu destino más frecuente es <strong>{{ d.nombre }}</strong> ({{ d.veces }} {{ d.veces === 1 ? 'viaje' : 'viajes' }}).</p>
+      }
+    </section>
+
+    <!-- Historial -->
+    <section class="tarjeta lista">
+      <h2>Historial</h2>
+      <ion-list lines="full">
+        @for (v of viajes(); track v.id) {
+          <app-viaje-item [viaje]="v">
+            @if (v.status === 'completed') {
+              <ion-button size="small" fill="outline" color="dark" (click)="calificar(v)">Calificar</ion-button>
+            }
+          </app-viaje-item>
+        } @empty {
+          @if (cargado()) {
+            <p class="vacio">Todavía no has hecho viajes. Cuando pidas uno, aparecerá aquí.</p>
+          }
+        }
+      </ion-list>
+    </section>
+  </div>
+</ion-content>

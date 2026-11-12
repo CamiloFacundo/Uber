@@ -1,0 +1,162 @@
+<ion-content class="login" [fullscreen]="true">
+  <div class="pantalla">
+    <!-- Panel de marca: mapa topográfico con una ruta que se dibuja al abrir -->
+    <aside class="panel">
+      <svg class="mapa" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="ruta-auren" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#17A9B8" />
+            <stop offset="1" stop-color="#C8A96A" />
+          </linearGradient>
+        </defs>
+        <g class="curvas">
+          <path d="M-20 120 C 120 60, 220 180, 360 120 S 560 40, 640 110" />
+          <path d="M-20 180 C 110 120, 240 250, 380 180 S 560 110, 640 170" />
+          <path d="M-20 250 C 140 190, 230 320, 400 250 S 560 180, 640 240" />
+          <path d="M-20 330 C 90 290, 260 400, 420 320 S 580 260, 640 320" />
+          <path d="M-20 420 C 130 360, 250 480, 380 420 S 560 360, 640 410" />
+          <path d="M-20 500 C 100 460, 280 560, 420 500 S 590 440, 640 500" />
+          <path d="M-20 590 C 150 530, 260 650, 400 590 S 560 520, 640 580" />
+          <path d="M-20 680 C 120 630, 270 740, 420 680 S 580 620, 640 670" />
+          <path d="M-20 760 C 140 720, 250 830, 400 770 S 570 710, 640 760" />
+        </g>
+        <path class="ruta" d="M440 680 C 490 640, 540 650, 530 580 S 520 480, 565 430" />
+        <circle class="punto-origen" cx="440" cy="680" r="9" />
+        <g class="punto-destino" transform="translate(565 430)">
+          <circle r="16" />
+          <circle r="6" />
+        </g>
+      </svg>
+
+      <div class="panel-contenido">
+        <app-logo tono="sobre-oscuro" [alto]="52"></app-logo>
+
+        <div class="mensaje">
+          <h2>Cada destino merece una mejor experiencia.</h2>
+          <p class="lema">Pide tu viaje en segundos, conoce la tarifa antes de confirmar y sigue a tu conductor en tiempo real.</p>
+          <ul class="beneficios">
+            <li>
+              <ion-icon name="shield-checkmark-outline" aria-hidden="true"></ion-icon>
+              <span><strong>Viajes seguros y confiables.</strong> Solo conducen personas aprobadas por un administrador.</span>
+            </li>
+            <li>
+              <ion-icon name="flash-outline" aria-hidden="true"></ion-icon>
+              <span><strong>Llegada rápida a tu destino.</strong> La ruta y la tarifa se calculan antes de pedir.</span>
+            </li>
+            <li>
+              <ion-icon name="location-outline" aria-hidden="true"></ion-icon>
+              <span><strong>Cobertura en Neiva y alrededores.</strong> Sigue al conductor en el mapa hasta tu destino.</span>
+            </li>
+            <li>
+              <ion-icon name="star-outline" aria-hidden="true"></ion-icon>
+              <span><strong>Experiencia premium.</strong> Elige entre Confort, Plus y Premium.</span>
+            </li>
+          </ul>
+        </div>
+
+        <p class="pie">Proyecto académico, FET 2026</p>
+      </div>
+    </aside>
+
+    <!-- Formulario -->
+    <main class="formulario">
+      <div class="caja">
+
+        <h1>Inicia sesión</h1>
+        <p class="subtitulo">Entra con tu correo o tu número de teléfono.</p>
+
+        <form [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
+          <div class="campo" [class.con-error]="invalido('login')">
+            <label for="login">Correo o teléfono</label>
+            <input
+              id="login"
+              type="text"
+              inputmode="email"
+              formControlName="login"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              placeholder="nombre@correo.com"
+              [attr.aria-invalid]="invalido('login')"
+              aria-describedby="login-error"
+            />
+            @if (invalido('login')) {
+              <span class="error-campo" id="login-error">Escribe tu correo o tu teléfono.</span>
+            }
+          </div>
+
+          <div class="campo" [class.con-error]="invalido('password')">
+            <label for="password">Contraseña</label>
+            <div class="con-boton">
+              <input
+                id="password"
+                [type]="verClave() ? 'text' : 'password'"
+                formControlName="password"
+                autocomplete="current-password"
+                placeholder="Tu contraseña"
+                (keydown)="revisarMayusculas($event)"
+                (keyup)="revisarMayusculas($event)"
+                (blur)="mayusculas.set(false)"
+                [attr.aria-invalid]="invalido('password')"
+                aria-describedby="password-error password-mayus"
+              />
+              <button
+                type="button"
+                class="ver-clave"
+                (click)="verClave.set(!verClave())"
+                [attr.aria-label]="verClave() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                [attr.aria-pressed]="verClave()"
+              >
+                <ion-icon [name]="verClave() ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+              </button>
+            </div>
+            @if (invalido('password')) {
+              <span class="error-campo" id="password-error">Escribe tu contraseña.</span>
+            }
+            @if (mayusculas()) {
+              <span class="aviso-campo" id="password-mayus">Bloq Mayús está activado.</span>
+            }
+          </div>
+
+          <div class="opciones">
+            <label class="recordar">
+              <input type="checkbox" formControlName="recordar" />
+              <span>Recordar mi correo</span>
+            </label>
+            <a routerLink="/recuperar">¿Olvidaste tu contraseña?</a>
+          </div>
+
+          @if (errorServidor(); as e) {
+            <p class="error-servidor" role="alert">
+              <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+              <span>{{ e }}</span>
+            </p>
+          }
+
+          <button type="submit" class="ingresar" [disabled]="cargando()">
+            @if (cargando()) {
+              <ion-spinner name="crescent"></ion-spinner>
+              <span>Ingresando</span>
+            } @else {
+              <span>Ingresar</span>
+              <ion-icon name="arrow-forward" aria-hidden="true"></ion-icon>
+            }
+          </button>
+        </form>
+
+        <p class="registro">¿No tienes cuenta? <a routerLink="/registro">Crea una aquí</a></p>
+
+        @if (modoPrueba) {
+          <div class="prueba">
+            <p>Modo sin red. Entra con una cuenta de prueba:</p>
+            <div class="chips">
+              <button type="button" (click)="usarCuenta('cliente@uber.com', 'cliente123')">Pasajero</button>
+              <button type="button" (click)="usarCuenta('conductor@uber.com', 'conductor123')">Conductor</button>
+              <button type="button" (click)="usarCuenta('admin@uber.com', 'admin123')">Administrador</button>
+            </div>
+          </div>
+        }
+      </div>
+    </main>
+  </div>
+</ion-content>

@@ -1,0 +1,62 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-title>Tarifas</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  @if (mostrarFormulario()) {
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <ion-list inset>
+        <ion-list-header>Nueva tarifa</ion-list-header>
+        <ion-item>
+          <ion-input label="Nombre" labelPlacement="floating" formControlName="name" placeholder="Tarifa Hora Pico"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input label="Tarifa base ($)" labelPlacement="floating" type="number" formControlName="base_fare"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input label="Precio por km ($)" labelPlacement="floating" type="number" formControlName="price_per_km"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input label="Precio por minuto ($)" labelPlacement="floating" type="number" formControlName="price_per_minute"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input label="Tarifa mínima ($)" labelPlacement="floating" type="number" formControlName="minimum_fare"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input label="Multiplicador (hora pico)" labelPlacement="floating" type="number" step="0.1" formControlName="surge_multiplier"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-toggle formControlName="active">Activa</ion-toggle>
+        </ion-item>
+      </ion-list>
+      <div class="ion-padding-horizontal">
+        <ion-button type="submit" expand="block" color="primary">Guardar tarifa</ion-button>
+        <ion-button expand="block" fill="clear" color="medium" (click)="mostrarFormulario.set(false)">Cancelar</ion-button>
+      </div>
+    </form>
+  } @else {
+    <div class="ion-padding">
+      <ion-button expand="block" color="primary" (click)="mostrarFormulario.set(true)">Nueva tarifa</ion-button>
+    </div>
+  }
+
+  @for (t of tarifas(); track t.id ?? t.name) {
+    <ion-card>
+      <ion-card-header>
+        <ion-card-subtitle>
+          <ion-badge [color]="t.active ? 'success' : 'medium'">{{ t.active ? 'Activa' : 'Inactiva' }}</ion-badge>
+        </ion-card-subtitle>
+        <ion-card-title>{{ t.name }}</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Base {{ t.base_fare | currency: 'COP' : 'symbol-narrow' : '1.0-0' }} · Mínima {{ t.minimum_fare | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</p>
+        <p>{{ t.price_per_km | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}/km · {{ t.price_per_minute | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}/min</p>
+        <p>Multiplicador × {{ t.surge_multiplier }}</p>
+      </ion-card-content>
+    </ion-card>
+  } @empty {
+    <p class="ion-padding">No hay tarifas configuradas.</p>
+  }
+</ion-content>

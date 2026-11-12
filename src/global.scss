@@ -35,3 +35,133 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import '@ionic/angular/css/palettes/dark.system.css';
+
+/*
+ * Identidad visual de AUREN ("Cada destino merece una mejor experiencia").
+ *   Teal principal  #087F8C  color principal: selección, enlaces, ruta, "en línea"
+ *   Dorado premium  #C8A96A  botón principal de cada pantalla, destino, detalles de marca
+ *   Azul noche      #101827  texto, barras y paneles oscuros
+ *   Crema claro     #F5F2EA  fondo
+ *   Gris suave      #687386  texto secundario
+ * Letra: Overpass (instalada localmente, funciona sin internet).
+ * Los colores de Ionic (primary, dark, success...) están en theme/variables.scss y usan estos mismos valores.
+ * Los nombres --rd-* se mantienen para no tocar cada pantalla.
+ */
+@import "@fontsource-variable/overpass/wght.css";
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  --ion-font-family: 'Overpass Variable', system-ui, sans-serif;
+
+  --rd-fondo: #f5f2ea;
+  --rd-superficie: #ffffff;
+  --rd-tinta: #101827;
+  --rd-suave: #687386;
+  --rd-linea: #e4dfd3;
+  --rd-primario: #087f8c;
+  --rd-primario-hover: #066a75;
+  --rd-sobre-primario: #ffffff;
+  --rd-anillo: rgba(8, 127, 140, 0.18);
+  // Botón principal de cada pantalla ("Solicitar viaje", "Ingresar"...): dorado con texto azul noche
+  --rd-cta: #c8a96a;
+  --rd-cta-hover: #b8975a;
+  --rd-sobre-cta: #101827;
+  --rd-acento: #c8a96a;
+  --rd-degradado: linear-gradient(120deg, #087f8c 0%, #c8a96a 100%);
+  --rd-primario-texto: #087f8c;
+  --rd-primario-suave: #e2f1f2;
+  --rd-noche: #101827;
+  --rd-rio: #087f8c;
+  --rd-rio-suave: #e2f1f2;
+  --rd-sol: #c8a96a;
+  --rd-asfalto: #1c2638;
+  --rd-alerta: #c2413a;
+  --rd-alerta-suave: #fbeeec;
+  --rd-alerta-borde: #efc8c4;
+  --rd-letra: 'Overpass Variable', system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --rd-fondo: #101827;
+    --rd-superficie: #182234;
+    --rd-tinta: #f5f2ea;
+    --rd-suave: #98a1b3;
+    --rd-linea: #283449;
+    --rd-primario: #17a9b8;
+    --rd-primario-hover: #22bccb;
+    --rd-sobre-primario: #101827;
+    --rd-anillo: rgba(23, 169, 184, 0.3);
+    --rd-cta: #c8a96a;
+    --rd-cta-hover: #d6b97c;
+    --rd-sobre-cta: #101827;
+    --rd-acento: #c8a96a;
+    --rd-primario-texto: #3cc4d2;
+    --rd-primario-suave: #12313a;
+    --rd-noche: #0b111d;
+    --rd-rio: #17a9b8;
+    --rd-rio-suave: #12313a;
+    --rd-sol: #c8a96a;
+    --rd-asfalto: #283449;
+    --rd-alerta: #ff8a80;
+    --rd-alerta-suave: #2e1a1e;
+    --rd-alerta-borde: #5a2a2d;
+  }
+}
+
+/* ---- Estilos compartidos de la app ---- */
+.buscando {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.estrellas {
+  display: flex;
+  justify-content: center;
+}
+
+.estimacion {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--ion-color-light);
+  }
+
+  span {
+    font-size: 12px;
+    color: var(--ion-color-medium);
+  }
+}
+
+.conductor {
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--ion-color-light);
+
+  h2 {
+    margin-top: 0;
+  }
+}
+
+.gps {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}

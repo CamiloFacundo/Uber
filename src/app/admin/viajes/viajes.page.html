@@ -1,0 +1,24 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-title>Viajes</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list>
+    <ion-item>
+      <ion-select label="Estado" [value]="filtro()" (ionChange)="cambiarFiltro($event.detail.value)" interface="popover">
+        <ion-select-option value="">Todos</ion-select-option>
+        @for (e of estados; track e.valor) {
+          <ion-select-option [value]="e.valor">{{ e.texto }}</ion-select-option>
+        }
+      </ion-select>
+    </ion-item>
+
+    @for (v of viajes(); track v.id) {
+      <app-viaje-item [viaje]="v" [mostrarCliente]="true"></app-viaje-item>
+    } @empty {
+      <p class="ion-padding">No hay viajes con ese estado.</p>
+    }
+  </ion-list>
+</ion-content>

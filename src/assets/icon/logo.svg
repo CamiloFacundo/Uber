@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>AUREN</title>
+  <defs>
+    <linearGradient id="teal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#19B5C2"/>
+      <stop offset="1" stop-color="#087F8C"/>
+    </linearGradient>
+    <linearGradient id="oro" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#B8945A"/>
+      <stop offset="1" stop-color="#E2C88F"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#101827"/>
+  <!-- pierna izquierda y vértice de la A (teal) -->
+  <path fill="url(#teal)" d="M7 52L27.5 11H36.5L42.5 23.2C32 25.5 21 33 14.5 44.5L10.8 52Z"/>
+  <!-- carretera dorada que cruza la A y se vuelve la pierna derecha -->
+  <path fill="url(#oro)" d="M11 52C17 38.5 29 29.5 44 27.6L57 52H47.5L40.3 37.4C31 39.8 24.5 45.3 21.4 52Z"/>
+  <!-- línea central de la carretera -->
+  <path d="M16.2 52C21.7 41.6 30.8 34.4 42 32.4" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-dasharray="4.2 3.6"/>
+</svg>

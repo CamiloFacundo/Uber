@@ -1,0 +1,475 @@
+/*
+ * Login de AUREN. Panel azul noche con brillo teal; teal como color principal y dorado en el botón principal.
+ * Computador: dos columnas (panel de marca con mapa topográfico + formulario).
+ * Celular: el panel se reduce a una cabecera y el formulario va debajo.
+ * Colores --rd-* en global.scss.
+ */
+
+ion-content.login {
+  --background: var(--rd-superficie);
+  --color: var(--rd-tinta);
+}
+
+h1,
+h2,
+p,
+ul {
+  margin: 0;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+.pantalla {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  min-height: 100%;
+}
+
+/* ---------- Panel de marca ---------- */
+.panel {
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+  background:
+    radial-gradient(90% 70% at 100% 0%, rgba(8, 127, 140, 0.55), transparent 65%),
+    radial-gradient(70% 60% at 0% 100%, rgba(200, 169, 106, 0.16), transparent 70%),
+    #101827;
+}
+
+.mapa {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+
+  .curvas path {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1.2;
+  }
+
+  .ruta {
+    fill: none;
+    stroke: url(#ruta-auren);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 360;
+    stroke-dashoffset: 360;
+    animation: trazar 2.2s 0.3s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  }
+
+  .punto-origen {
+    fill: #101827;
+    stroke: #17a9b8;
+    stroke-width: 4;
+  }
+
+  .punto-destino {
+    opacity: 0;
+    animation: aparecer 0.4s 2.3s ease-out forwards;
+
+    circle:first-child {
+      fill: rgba(200, 169, 106, 0.3);
+    }
+
+    circle:last-child {
+      fill: #c8a96a;
+    }
+  }
+}
+
+@keyframes trazar {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes aparecer {
+  to {
+    opacity: 1;
+  }
+}
+
+.panel-contenido {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 48px;
+  height: 100%;
+  padding: 48px 56px;
+}
+
+.mensaje {
+  max-width: 30rem;
+
+  h2 {
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+}
+
+.lema {
+  margin-top: 16px;
+  max-width: 28rem;
+  font-size: 17px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.beneficios {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 36px;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  ion-icon {
+    flex: none;
+    margin-top: 2px;
+    font-size: 22px;
+    color: #c8a96a;
+  }
+
+  strong {
+    color: #f5f2ea;
+    font-weight: 600;
+  }
+}
+
+.pie {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ---------- Formulario ---------- */
+.formulario {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  background: var(--rd-superficie);
+}
+
+.caja {
+  width: 100%;
+  max-width: 400px;
+
+  h1 {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+.subtitulo {
+  margin-top: 8px;
+  font-size: 16px;
+  color: var(--rd-suave);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 32px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  input {
+    width: 100%;
+    height: 50px;
+    padding: 0 14px;
+    border: 1px solid var(--rd-linea);
+    border-radius: 10px;
+    font-size: 16px;
+    color: var(--rd-tinta);
+    background: var(--rd-superficie);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &::placeholder {
+      color: var(--rd-suave);
+      opacity: 0.65;
+    }
+
+    &:hover {
+      border-color: var(--rd-suave);
+    }
+
+    &:focus {
+      border-color: var(--rd-primario);
+      box-shadow: 0 0 0 3px var(--rd-anillo);
+    }
+  }
+
+  &.con-error input {
+    border-color: var(--rd-alerta);
+  }
+}
+
+.con-boton {
+  position: relative;
+
+  input {
+    padding-right: 52px;
+  }
+}
+
+.ver-clave {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 20px;
+  color: var(--rd-suave);
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--rd-tinta);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--rd-primario);
+  }
+}
+
+.error-campo {
+  font-size: 13px;
+  color: var(--rd-alerta);
+}
+
+.aviso-campo {
+  font-size: 13px;
+  color: var(--rd-suave);
+}
+
+.opciones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 14px;
+
+  a {
+    font-weight: 600;
+    color: var(--rd-tinta);
+    text-decoration: underline;
+    text-decoration-color: var(--rd-linea);
+    text-underline-offset: 4px;
+
+    &:hover {
+      text-decoration-color: var(--rd-tinta);
+    }
+  }
+}
+
+.recordar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--rd-suave);
+  cursor: pointer;
+
+  input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--rd-primario);
+  }
+}
+
+.error-servidor {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--rd-alerta-borde);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--rd-alerta);
+  background: var(--rd-alerta-suave);
+
+  ion-icon {
+    flex: none;
+    margin-top: 1px;
+    font-size: 18px;
+  }
+}
+
+.ingresar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 50px;
+  border: 0;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--rd-sobre-cta);
+  background: var(--rd-cta);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  ion-icon {
+    font-size: 18px;
+    transition: transform 0.15s ease;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--rd-cta-hover);
+
+    ion-icon {
+      transform: translateX(3px);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--rd-primario);
+    outline-offset: 3px;
+  }
+
+  ion-spinner {
+    width: 20px;
+    height: 20px;
+    color: var(--rd-sobre-cta);
+  }
+}
+
+.registro {
+  margin-top: 28px;
+  font-size: 15px;
+  color: var(--rd-suave);
+
+  a {
+    font-weight: 600;
+    color: var(--rd-tinta);
+    text-decoration: underline;
+    text-decoration-color: var(--rd-acento);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+}
+
+.prueba {
+  margin-top: 32px;
+  padding: 16px;
+  border: 1px dashed var(--rd-linea);
+  border-radius: 10px;
+
+  p {
+    font-size: 13px;
+    color: var(--rd-suave);
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+
+  button {
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--rd-linea);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--rd-tinta);
+    background: var(--rd-superficie);
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--rd-tinta);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--rd-primario);
+      outline-offset: 2px;
+    }
+  }
+}
+
+/* ---------- Celular y tableta ---------- */
+@media (max-width: 900px) {
+  .pantalla {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .panel-contenido {
+    gap: 28px;
+    padding: calc(env(safe-area-inset-top) + 28px) 24px 32px;
+  }
+
+  .mensaje h2 {
+    font-size: 24px;
+  }
+
+  .beneficios,
+  .pie,
+  .lema {
+    display: none;
+  }
+
+  .formulario {
+    align-items: flex-start;
+    padding: 32px 24px calc(env(safe-area-inset-bottom) + 32px);
+  }
+
+  .caja h1 {
+    font-size: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa .ruta {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  .mapa .punto-destino {
+    animation: none;
+    opacity: 1;
+  }
+}

@@ -1,0 +1,19 @@
+.cabecera {
+  text-align: center;
+  margin: 16px 0;
+
+  ion-icon {
+    font-size: 88px;
+    color: var(--ion-color-medium);
+  }
+
+  h2 {
+    margin: 4px 0;
+  }
+
+  .rol {
+    margin: 0;
+    text-transform: capitalize;
+    color: var(--ion-color-medium);
+  }
+}

@@ -1,0 +1,48 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-title>Conductores</ion-title>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-segment [value]="filtro()" (ionChange)="cambiarFiltro($any($event.detail.value))" [scrollable]="true">
+      <ion-segment-button value="pending"><ion-label>Pendientes</ion-label></ion-segment-button>
+      <ion-segment-button value="approved"><ion-label>Aprobados</ion-label></ion-segment-button>
+      <ion-segment-button value="suspended"><ion-label>Suspendidos</ion-label></ion-segment-button>
+      <ion-segment-button value="todos"><ion-label>Todos</ion-label></ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  @for (c of conductores(); track c.id) {
+    <ion-card>
+      <ion-card-header>
+        <ion-card-subtitle>
+          <ion-badge [color]="aprobacion[c.approval_status].color">{{ aprobacion[c.approval_status].texto }}</ion-badge>
+        </ion-card-subtitle>
+        <ion-card-title>{{ c.user.name }}</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p><ion-icon name="mail-outline"></ion-icon> {{ c.user.email }}</p>
+        <p><ion-icon name="id-card-outline"></ion-icon> Licencia {{ c.license_number }}</p>
+        @for (v of c.vehicles; track v.plate) {
+          <p><ion-icon name="car-outline"></ion-icon> {{ v.brand }} {{ v.model }} {{ v.year }} · <strong>{{ v.plate }}</strong></p>
+        }
+        <p><ion-icon name="star" color="warning"></ion-icon> {{ c.rating_average | number: '1.1-2' }}</p>
+
+        <div class="acciones">
+          @if (c.approval_status !== 'approved') {
+            <ion-button size="small" color="success" (click)="cambiar(c, 'approved')">Aprobar</ion-button>
+          }
+          @if (c.approval_status === 'approved') {
+            <ion-button size="small" color="danger" fill="outline" (click)="cambiar(c, 'suspended')">Suspender</ion-button>
+          }
+          @if (c.approval_status === 'pending') {
+            <ion-button size="small" color="medium" fill="outline" (click)="cambiar(c, 'rejected')">Rechazar</ion-button>
+          }
+        </div>
+      </ion-card-content>
+    </ion-card>
+  } @empty {
+    <p class="ion-padding">No hay conductores en esta categoría.</p>
+  }
+</ion-content>
