@@ -40,6 +40,22 @@ El APK queda en `android/app/build/outputs/apk/debug/app-debug.apk`; se copia al
 - Ícono y pantalla de inicio: `assets/` → `npx @capacitor/assets generate --android`.
 - iPhone: Capacitor también genera la app iOS, pero compilarla exige un Mac con Xcode.
 
+### Emulador (celular virtual)
+
+Si no hay un celular a mano, o el celular no alcanza la red del servidor, la app corre en un emulador
+de Android dentro del computador:
+
+```powershell
+.\generar-apk.ps1 -Servidor   # (o sin -Servidor para el simulador)
+.\abrir-emulador.ps1          # crea "AUREN_Pixel" la primera vez, lo abre, instala el APK y abre la app
+```
+
+- Usa la imagen `system-images;android-34;google_apis;x86_64` (Android 14) y la aceleración WHPX de Windows.
+- El emulador navega con la red del computador: si el computador llega a `20.20.1.42`, la app también.
+- El GPS del emulador queda en Neiva (`adb emu geo fix -75.2894 2.9273`); se puede mover desde los
+  controles extendidos del emulador (botón "…" → Location).
+- `.\abrir-emulador.ps1 -SoloAbrir` abre el emulador sin reinstalar la app.
+
 ## Estructura
 
 ```

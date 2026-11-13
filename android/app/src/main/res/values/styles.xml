@@ -13,6 +13,11 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Barras del sistema en azul noche con íconos claros, igual en tema claro u oscuro -->
+        <item name="android:windowBackground">@color/auren_noche</item>
+        <item name="android:statusBarColor">@color/auren_noche</item>
+        <item name="android:navigationBarColor">@color/auren_noche</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
 

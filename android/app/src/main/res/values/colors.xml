@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Azul noche de AUREN: barras del sistema y fondo mientras carga la vista web -->
+    <color name="auren_noche">#101827</color>
+    <color name="colorPrimary">#087F8C</color>
+    <color name="colorPrimaryDark">#101827</color>
+    <color name="colorAccent">#C8A96A</color>
+</resources>

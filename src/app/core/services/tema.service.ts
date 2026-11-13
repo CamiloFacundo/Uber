@@ -1,4 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 export type ModoTema = 'oscuro' | 'claro' | 'sistema';
 
@@ -34,7 +36,11 @@ export class TemaService {
   }
 
   private aplicar(): void {
-    document.documentElement.classList.toggle('ion-palette-dark', this.oscuro());
+    const oscuro = this.oscuro();
+    document.documentElement.classList.toggle('ion-palette-dark', oscuro);
+    // En Android la barra de estado es siempre azul noche (styles.xml): íconos claros en ambos temas.
+    // setBackgroundColor no se usa porque Android 15+ lo ignora (edge-to-edge).
+    if (Capacitor.isNativePlatform()) StatusBar.setStyle({ style: Style.Dark }).catch(() => undefined);
   }
 
   private leer(): ModoTema {
