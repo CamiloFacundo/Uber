@@ -20,7 +20,7 @@ import { LogoComponent } from '../../shared/logo/logo.component';
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start"><ion-back-button defaultHref="/login" text="Volver"></ion-back-button></ion-buttons>
-        <ion-title>Restablecer contraseña</ion-title>
+        <ion-title>Recuperar cuenta</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding auth">
@@ -34,7 +34,7 @@ import { LogoComponent } from '../../shared/logo/logo.component';
             <ion-input label="Nueva contraseña" labelPlacement="floating" type="password" formControlName="new_password" errorText="Mínimo 8 caracteres"></ion-input>
           </ion-item>
         </ion-list>
-        <ion-button type="submit" expand="block" color="primary" [disabled]="cargando()">
+        <ion-button type="submit" expand="block" color="secondary" [disabled]="cargando()">
           @if (cargando()) { <ion-spinner name="crescent"></ion-spinner> } @else { Guardar nueva contraseña }
         </ion-button>
       </form>

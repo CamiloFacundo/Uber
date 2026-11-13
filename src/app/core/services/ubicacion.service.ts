@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 
 export interface Posicion {
   latitude: number;
@@ -12,7 +13,7 @@ export interface Posicion {
  *
  * En un computador sin GPS, Windows calcula la ubicación con el WiFi y puede tardar varios segundos,
  * por eso se intenta dos veces: primero con alta precisión y, si no responde, con precisión normal
- * aceptando una ubicación reciente guardada. Si falla, el mensaje dice exactamente qué hacer.
+ * aceptando una ubicación reciente guardada. Los errores se traducen a un mensaje con la acción a tomar.
  */
 @Injectable({ providedIn: 'root' })
 export class UbicacionService {
@@ -56,9 +57,14 @@ export class UbicacionService {
   private mensaje(err: GeolocationPositionError): string {
     switch (err?.code) {
       case 1: // PERMISSION_DENIED
+        if (Capacitor.isNativePlatform()) {
+          return 'No diste permiso de ubicación. Actívalo en Ajustes > Aplicaciones > AUREN > Permisos, o toca el mapa para elegir tu punto.';
+        }
         return 'No diste permiso de ubicación. Actívalo en el ícono a la izquierda de la dirección del navegador, o toca el mapa para elegir tu punto.';
       case 2: // POSITION_UNAVAILABLE
-        return 'Tu equipo no pudo calcular la ubicación. Revisa que el WiFi esté encendido y que la ubicación de Windows esté activada, o toca el mapa.';
+        return Capacitor.isNativePlatform()
+          ? 'El celular no pudo calcular la ubicación. Activa el GPS (Ubicación) en el panel rápido, o toca el mapa.'
+          : 'Tu equipo no pudo calcular la ubicación. Revisa que el WiFi esté encendido y que la ubicación de Windows esté activada, o toca el mapa.';
       case 3: // TIMEOUT
         return 'La ubicación tardó demasiado. Intenta de nuevo o toca el mapa para elegir tu punto.';
       default:

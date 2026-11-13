@@ -21,6 +21,25 @@ En `src/environments/environment.ts`:
   Usuarios: `admin@uber.com` / `admin123`, `conductor@uber.com` / `conductor123`,
   `cliente@uber.com` / `cliente123`, `andres@uber.com` / `andres123` (conductor pendiente de aprobación).
 
+## App Android (Capacitor)
+
+La misma app se empaqueta como aplicación Android con Capacitor (carpeta `android/`, id `co.auren.app`).
+
+```powershell
+.\generar-apk.ps1            # con el simulador: funciona sin servidor
+.\generar-apk.ps1 -Servidor  # conectada al backend del profesor
+```
+
+El APK queda en `android/app/build/outputs/apk/debug/app-debug.apk`; se copia al celular y se instala
+(Android pide permitir "instalar apps de origen desconocido"). Para probarla en el emulador o depurarla:
+`npx cap open android` abre el proyecto en Android Studio.
+
+- Permisos: internet, ubicación (GPS) y vibración (`android/app/src/main/AndroidManifest.xml`).
+- El servidor del profesor usa `http`, por eso se permite tráfico sin cifrar (`usesCleartextTraffic`, `allowMixedContent`).
+- Gradle necesita Java 21 (el script usa el JDK de `C:\Program Files\Android\openjdk\jdk-21.0.8`).
+- Ícono y pantalla de inicio: `assets/` → `npx @capacitor/assets generate --android`.
+- iPhone: Capacitor también genera la app iOS, pero compilarla exige un Mac con Xcode.
+
 ## Estructura
 
 ```

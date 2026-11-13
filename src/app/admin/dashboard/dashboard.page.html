@@ -1,0 +1,181 @@
+<ion-header class="ion-no-border"><app-admin-barra></app-admin-barra></ion-header>
+
+<ion-content class="admin-pagina">
+  <div class="admin-contenido">
+    <div class="admin-titulo">
+      <div>
+        <h1>Panel de Administración</h1>
+        <p>Gestiona y supervisa el funcionamiento de la plataforma</p>
+      </div>
+      <select class="admin-select" [value]="periodo()" (change)="cambiarPeriodo($any($event.target).value)" aria-label="Periodo">
+        <option value="7">Últimos 7 días</option>
+        <option value="30">Últimos 30 días</option>
+        <option value="90">Últimos 90 días</option>
+      </select>
+    </div>
+
+    <!-- Indicadores -->
+    @if (datos.stats(); as s) {
+      <section class="kpis" aria-label="Indicadores principales">
+        <article class="kpi">
+          <span class="kpi-icono teal" aria-hidden="true"><ion-icon name="car-sport"></ion-icon></span>
+          <div class="kpi-datos">
+            <strong>{{ s.completed_trips | number }}</strong>
+            <span>Viajes realizados</span>
+          </div>
+          <div class="kpi-pie">
+            @if (tendenciaViajes(); as t) {
+              <span class="tendencia" [class.baja]="t < 0">
+                <ion-icon [name]="t < 0 ? 'arrow-down' : 'arrow-up'" aria-hidden="true"></ion-icon>{{ t | number: '1.0-1' }}%
+              </span>
+            } @else {
+              <span class="tendencia neutra">{{ completadosPeriodo() }} en el periodo</span>
+            }
+            <app-sparkline class="spark" [valores]="sparkViajes()" descripcion="Viajes completados en el periodo"></app-sparkline>
+          </div>
+        </article>
+
+        <article class="kpi">
+          <span class="kpi-icono lavanda" aria-hidden="true"><ion-icon name="people"></ion-icon></span>
+          <div class="kpi-datos">
+            <strong>{{ s.total_clients | number }}</strong>
+            <span>Usuarios registrados</span>
+          </div>
+          <div class="kpi-pie">
+            <span class="tendencia neutra">{{ pasajerosPeriodo() }} viajaron en el periodo</span>
+          </div>
+        </article>
+
+        <article class="kpi">
+          <span class="kpi-icono oro" aria-hidden="true"><ion-icon name="id-card"></ion-icon></span>
+          <div class="kpi-datos">
+            <strong>{{ s.approved_drivers | number }}</strong>
+            <span>Conductores activos</span>
+          </div>
+          <div class="kpi-pie">
+            <span class="tendencia neutra">{{ enLinea() }} en línea ahora</span>
+            @if (s.pending_drivers) {
+              <a class="pendientes" routerLink="/admin/conductores">{{ s.pending_drivers }} por aprobar</a>
+            }
+          </div>
+        </article>
+
+        <article class="kpi">
+          <span class="kpi-icono verde" aria-hidden="true"><ion-icon name="cash"></ion-icon></span>
+          <div class="kpi-datos">
+            <strong>{{ s.total_revenue | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+            <span>Ingresos totales</span>
+          </div>
+          <div class="kpi-pie">
+            @if (tendenciaIngresos(); as t) {
+              <span class="tendencia" [class.baja]="t < 0">
+                <ion-icon [name]="t < 0 ? 'arrow-down' : 'arrow-up'" aria-hidden="true"></ion-icon>{{ t | number: '1.0-1' }}%
+              </span>
+            } @else {
+              <span class="tendencia neutra">{{ ingresosPeriodo() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }} en el periodo</span>
+            }
+            <app-sparkline class="spark" [valores]="sparkIngresos()" descripcion="Ingresos en el periodo"></app-sparkline>
+          </div>
+        </article>
+      </section>
+    } @else if (!datos.cargado()) {
+      <p class="admin-nota">Cargando el panel...</p>
+    }
+
+    <!-- Mapa y actividad -->
+    <div class="fila mapa-fila">
+      <section class="admin-tarjeta mapa-tarjeta">
+        <div class="admin-tarjeta-cabeza">
+          <h2>Mapa en tiempo real</h2>
+          <span class="en-vivo" [class.caido]="!datos.enLinea()">
+            <span class="punto" aria-hidden="true"></span>{{ datos.enLinea() ? 'En línea' : 'Sin conexión' }}
+          </span>
+        </div>
+        <div class="mapa">
+          <app-mapa [carros]="carrosActivos()"></app-mapa>
+          <div class="mapa-resumen">
+            @if (primerActivo(); as v) {
+              <span class="mapa-icono" aria-hidden="true"><ion-icon name="car-sport"></ion-icon></span>
+              <div>
+                <strong>{{ datos.activos().length }} {{ datos.activos().length === 1 ? 'viaje activo' : 'viajes activos' }}</strong>
+                <span>{{ v.driver?.user?.name ?? 'Conductor' }} → {{ v.destination_name ?? 'destino' }}</span>
+              </div>
+              <a routerLink="/admin/viajes" [queryParams]="{ estado: 'activos' }">Ver detalle</a>
+            } @else {
+              <span class="mapa-icono" aria-hidden="true"><ion-icon name="car-sport"></ion-icon></span>
+              <div>
+                <strong>Sin viajes activos</strong>
+                <span>{{ enLinea() }} conductores en línea esperando solicitudes</span>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-tarjeta actividad">
+        <div class="admin-tarjeta-cabeza">
+          <h2>Actividad reciente</h2>
+          <a routerLink="/admin/viajes">Ver todas</a>
+        </div>
+        <ol class="linea-tiempo">
+          @for (e of actividad(); track $index) {
+            <li>
+              <span class="evento-icono" [class]="'evento-icono ' + e.tono" aria-hidden="true"><ion-icon [name]="e.icono"></ion-icon></span>
+              <div>
+                <strong>{{ e.titulo }}</strong>
+                <small>{{ e.hace }}</small>
+                <span>{{ e.detalle }}</span>
+              </div>
+            </li>
+          } @empty {
+            <li class="admin-nota">Todavía no hay actividad.</li>
+          }
+        </ol>
+      </section>
+    </div>
+
+    <!-- Ranking y finanzas -->
+    <div class="fila tres">
+      <section class="admin-tarjeta">
+        <div class="admin-tarjeta-cabeza">
+          <h2>Conductores destacados</h2>
+          <a routerLink="/admin/conductores">Ver todos</a>
+        </div>
+        <ol class="ranking">
+          @for (c of destacados(); track c.id; let i = $index) {
+            <li>
+              <span class="puesto">{{ i + 1 }}</span>
+              <span class="avatar" aria-hidden="true">{{ c.user.name.charAt(0) }}</span>
+              <div class="ranking-datos">
+                <strong>{{ c.user.name }}</strong>
+                <span><ion-icon name="star" aria-hidden="true"></ion-icon> {{ c.rating_average | number: '1.1-1' }}, {{ c.viajes }} viajes</span>
+              </div>
+              <div class="ranking-derecha">
+                <span class="estado" [class.activo]="c.availability_status === 'available'">
+                  {{ c.availability_status === 'available' ? 'En línea' : 'Desconectado' }}
+                </span>
+                <strong>{{ c.ganancias | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+              </div>
+            </li>
+          } @empty {
+            <li class="admin-nota">No hay conductores aprobados.</li>
+          }
+        </ol>
+      </section>
+
+      <section class="admin-tarjeta">
+        <div class="admin-tarjeta-cabeza"><h2>Distribución de viajes</h2></div>
+        <app-dona [segmentos]="distribucion()" etiquetaTotal="Viajes"></app-dona>
+      </section>
+
+      <section class="admin-tarjeta">
+        <div class="admin-tarjeta-cabeza"><h2>Ingresos por mes</h2></div>
+        <app-area [puntos]="ingresosPorMes()" titulo="Ingresos de los últimos 6 meses"></app-area>
+      </section>
+    </div>
+
+    @if (datos.ultimaActualizacion(); as u) {
+      <p class="admin-nota actualizado">Actualizado {{ u.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }) }}. Se refresca cada 15 segundos.</p>
+    }
+  </div>
+</ion-content>

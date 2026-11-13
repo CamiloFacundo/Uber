@@ -1,0 +1,74 @@
+/* Recorrido origen → destino que comparten las pantallas del conductor */
+.ruta {
+  --ruta-pad-x: 0px;
+  --ruta-pad-y: 0px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  // la vía entre los dos puntos (centrada bajo los puntos de 20px)
+  &::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--ruta-pad-x) + 7px);
+    top: calc(var(--ruta-pad-y) + 14px);
+    bottom: calc(var(--ruta-pad-y) + 14px);
+    width: 6px;
+    border-radius: 3px;
+    background:
+      repeating-linear-gradient(to bottom, var(--rd-sol) 0 5px, transparent 5px 10px) center / 2px 100% no-repeat,
+      var(--rd-asfalto);
+  }
+
+  &.compacta {
+    gap: 10px;
+    --ruta-pad-y: -4px;
+
+    p {
+      font-size: 15px;
+    }
+  }
+}
+
+.parada {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+
+  p {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+}
+
+.rotulo {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 13px;
+  color: var(--rd-suave);
+}
+
+.punto {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+
+  &.origen {
+    border-radius: 50%;
+    border: 5px solid var(--rd-rio);
+    background: var(--rd-superficie);
+  }
+
+  // destino: marcador cuadrado
+  &.destino {
+    border-radius: 4px;
+    background: var(--rd-sol);
+    box-shadow: inset 0 0 0 4px var(--rd-sol), inset 0 0 0 7px var(--rd-tinta);
+  }
+}

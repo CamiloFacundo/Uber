@@ -1,10 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
-import { IonButton, IonContent, IonHeader, IonList, IonTitle, IonToolbar } from '@ionic/angular';
+import { IonButton, IonContent, IonHeader, IonList, IonTitle, IonToolbar, ModalController, IonSegment, IonSegmentButton, IonLabel } from '@ionic/angular';
 import { Viaje } from '../../core/models/models';
 import { ClienteService } from '../../core/services/cliente.service';
 import { UiService } from '../../core/services/ui.service';
 import { ViajeItemComponent } from '../../shared/viaje-item/viaje-item.component';
+import { CalificarComponent } from '../calificar/calificar.component';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
@@ -13,13 +14,19 @@ const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'o
   selector: 'app-cliente-historial',
   templateUrl: 'historial.page.html',
   styleUrls: ['historial.page.scss'],
-  imports: [CurrencyPipe, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonButton, ViajeItemComponent],
+  imports: [
+    CurrencyPipe, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonButton, IonSegment, IonSegmentButton, IonLabel,
+    ViajeItemComponent,
+  ],
 })
 export class ClienteHistorialPage {
   private cliente = inject(ClienteService);
   private ui = inject(UiService);
+  private modales = inject(ModalController);
 
   viajes = signal<Viaje[]>([]);
+  filtro = signal<'todos' | 'completed' | 'cancelled'>('todos');
+  filtrados = computed(() => (this.filtro() === 'todos' ? this.viajes() : this.viajes().filter((v) => v.status === this.filtro())));
   cargado = signal(false);
 
   completados = computed(() => this.viajes().filter((v) => v.status === 'completed'));
@@ -69,18 +76,9 @@ export class ClienteHistorialPage {
     });
   }
 
-  /** Calificación rápida desde el historial. Si ya estaba calificado, el backend responde 400. */
+  /** Abre la pantalla de calificación. Si ya estaba calificado, el backend responde 400 al enviar. */
   async calificar(v: Viaje): Promise<void> {
-    const texto = await this.ui.pedirTexto(`Calificar viaje #${v.id}`, 'Estrellas de 1 a 5', '5');
-    if (texto === null) return;
-    const score = Number(texto);
-    if (!Number.isInteger(score) || score < 1 || score > 5) {
-      this.ui.toast('Escribe un número de 1 a 5', 'danger');
-      return;
-    }
-    this.cliente.calificar(v.id, score, '', false).subscribe({
-      next: (mensaje) => this.ui.toast(mensaje, 'success'),
-      error: (err) => this.ui.error(err),
-    });
+    const modal = await this.modales.create({ component: CalificarComponent, componentProps: { viaje: v } });
+    await modal.present();
   }
 }

@@ -4,10 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 /**
- * Única puerta de entrada al backend PHP.
- * Todos los demás servicios usan este para hacer GET, POST, PUT y DELETE,
- * así la URL base se configura en un solo lugar (environment.apiUrl).
- * El token se agrega automáticamente en token.interceptor.ts.
+ * Cliente HTTP base: antepone environment.apiUrl a cada ruta. Lo usan todos los servicios de dominio.
+ * El token lo agrega token.interceptor.ts.
  */
 @Injectable({ providedIn: 'root' })
 export class ApiService {

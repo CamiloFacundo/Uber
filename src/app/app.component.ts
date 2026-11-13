@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular';
+import { TemaService } from './core/services/tema.service';
 
 @Component({
   selector: 'app-root',
@@ -7,5 +8,6 @@ import { IonApp, IonRouterOutlet } from '@ionic/angular';
   imports: [IonApp, IonRouterOutlet],
 })
 export class AppComponent {
-  constructor() {}
+  // Se crea al arrancar para aplicar el tema guardado (oscuro por defecto) antes de mostrar nada
+  private tema = inject(TemaService);
 }

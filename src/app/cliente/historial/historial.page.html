@@ -40,8 +40,13 @@
     <!-- Historial -->
     <section class="tarjeta lista">
       <h2>Historial</h2>
+      <ion-segment class="filtro" [value]="filtro()" (ionChange)="filtro.set($any($event.detail.value))">
+        <ion-segment-button value="todos"><ion-label>Todos</ion-label></ion-segment-button>
+        <ion-segment-button value="completed"><ion-label>Completados</ion-label></ion-segment-button>
+        <ion-segment-button value="cancelled"><ion-label>Cancelados</ion-label></ion-segment-button>
+      </ion-segment>
       <ion-list lines="full">
-        @for (v of viajes(); track v.id) {
+        @for (v of filtrados(); track v.id) {
           <app-viaje-item [viaje]="v">
             @if (v.status === 'completed') {
               <ion-button size="small" fill="outline" color="dark" (click)="calificar(v)">Calificar</ion-button>
@@ -49,7 +54,7 @@
           </app-viaje-item>
         } @empty {
           @if (cargado()) {
-            <p class="vacio">Todavía no has hecho viajes. Cuando pidas uno, aparecerá aquí.</p>
+            <p class="vacio">{{ filtro() === 'todos' ? 'Todavía no has hecho viajes. Cuando pidas uno, aparecerá aquí.' : 'No hay viajes en esta categoría.' }}</p>
           }
         }
       </ion-list>

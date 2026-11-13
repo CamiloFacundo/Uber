@@ -1,156 +1,153 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { CurrencyPipe, DecimalPipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { Subscription, interval, startWith, switchMap } from 'rxjs';
-import { IonContent, IonIcon, IonSelect, IonSelectOption, IonSpinner, IonTextarea, IonCheckbox } from '@ionic/angular';
+import { IonContent, IonIcon, IonSpinner } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
-  call, carOutline, carSportOutline, closeCircle, diamondOutline, locate, shareSocialOutline, star, starOutline, timeOutline, close,
+  airplane, arrowForward, briefcase, car, chevronForward, close, home, locate, navigate, notificationsOutline,
+  searchOutline, timeOutline, umbrella,
 } from 'ionicons/icons';
-import { Estimacion, Lugar, Viaje, ViajeActivo } from '../../core/models/models';
+import { Lugar, ViajeActivo } from '../../core/models/models';
 import { AuthService } from '../../core/services/auth.service';
+import { BusquedaService } from '../../core/services/busqueda.service';
 import { ClienteService } from '../../core/services/cliente.service';
+import { DireccionesService, TipoDireccion } from '../../core/services/direcciones.service';
 import { UbicacionService } from '../../core/services/ubicacion.service';
 import { UiService } from '../../core/services/ui.service';
-import { estadoViaje } from '../../shared/estado-viaje';
-import { CATEGORIAS, Categoria, TipoServicio, precioCategoria } from '../../shared/categorias';
+import { ViajePasajeroService } from '../../core/services/viaje-pasajero.service';
 import { LUGARES } from '../../shared/lugares';
+import { LogoComponent } from '../../shared/logo/logo.component';
 import { MapaComponent, Punto } from '../../shared/mapa/mapa.component';
 
-const CLAVE_RECIENTES = 'destinos_recientes';
-const CLAVE_RUTA = 'ruta_viaje_actual';
+/** Accesos rápidos de "Destinos frecuentes" */
+const AEROPUERTO = LUGARES.find((l) => l.nombre.startsWith('Aeropuerto'))!;
+const TURISMO = LUGARES.find((l) => l.nombre.startsWith('Malecón'))!;
 
 /**
- * Pantalla principal del pasajero:
- * 1. Escoge origen y destino en la lista, con su GPS o tocando el mapa; el servidor estima la tarifa.
- * 2. Pide el viaje (POST /client/ride-requests).
- * 3. Sigue el viaje en el mapa cada 5 s (GET /client/active): conductor, vehículo y su ubicación.
- * 4. Al terminar, califica al conductor.
+ * Inicio del pasajero (paso 1 y 2 del recorrido):
+ * ve su ubicación en el mapa, busca el destino o lo toca en el mapa, y pasa a elegir el vehículo.
  */
 @Component({
   selector: 'app-cliente-inicio',
   templateUrl: 'inicio.page.html',
   styleUrls: ['inicio.page.scss'],
-  imports: [
-    CurrencyPipe, DecimalPipe, FormsModule, IonContent, IonIcon, IonSelect, IonSelectOption, IonSpinner, IonTextarea,
-    IonCheckbox, MapaComponent,
-  ],
+  imports: [DecimalPipe, RouterLink, IonContent, IonIcon, IonSpinner, LogoComponent, MapaComponent],
 })
 export class ClienteInicioPage {
   private auth = inject(AuthService);
   private cliente = inject(ClienteService);
   private gps = inject(UbicacionService);
   private ui = inject(UiService);
+  private router = inject(Router);
+  private busqueda = inject(BusquedaService);
+  private dirs = inject(DireccionesService);
+  viaje = inject(ViajePasajeroService);
   private polling?: Subscription;
+  private temporizador?: ReturnType<typeof setTimeout>;
+  private ubicacionAutomatica = false;
 
-  usuario = this.auth.usuario;
-  primerNombre = computed(() => this.usuario()?.name.split(' ')[0] ?? '');
-  lugares = LUGARES;
-
-  // Selección del viaje
-  origen = signal<Lugar | null>(null);
-  destino = signal<Lugar | null>(null);
-  miPosicion = signal<Punto | null>(null);
-  recientes = signal<Lugar[]>(this.leer<Lugar[]>(CLAVE_RECIENTES, []));
-  estimacion = signal<Estimacion | null>(null);
-  estimando = signal(false);
-  enviando = signal(false);
+  primerNombre = computed(() => this.auth.usuario()?.name.split(' ')[0] ?? '');
   ubicando = signal(false);
-
-  // Tipo de viaje (Confort, Plus, Premium)
-  categorias = CATEGORIAS;
-  categoria = signal<TipoServicio>('confort');
-
-  // Viaje en curso
   activo = signal<ViajeActivo | null>(null);
-  viaje = computed(() => (this.activo()?.has_active ? (this.activo()!.data ?? null) : null));
-  estado = computed(() => estadoViaje(this.viaje()?.status ?? ''));
-  puedeCancelar = computed(() => ['requested', 'assigned', 'driver_arrived'].includes(this.viaje()?.status ?? ''));
-  private rutaGuardada = signal<{ origen: Lugar; destino: Lugar } | null>(this.leer(CLAVE_RUTA, null));
-  nombreOrigen = computed(() => this.viaje()?.origin_name ?? this.rutaGuardada()?.origen.nombre ?? '');
-  nombreDestino = computed(() => this.viaje()?.destination_name ?? this.rutaGuardada()?.destino.nombre ?? '');
+  hayViaje = computed(() => !!this.activo()?.has_active);
 
-  // Lo que muestra el mapa
-  mapaOrigen = computed<Punto | null>(() => (this.viaje() ? this.rutaGuardada()?.origen ?? null : this.origen()));
-  mapaDestino = computed<Punto | null>(() => (this.viaje() ? this.rutaGuardada()?.destino ?? null : this.destino()));
-  mapaConductor = computed<Punto | null>(() => {
-    const loc = this.viaje()?.driver?.latest_location;
-    return loc ? { lat: Number(loc.latitude), lng: Number(loc.longitude) } : null;
+  // ---------- Buscador ----------
+  /** Qué punto se está buscando: el destino (lo normal) o cambiar el punto de recogida */
+  buscandoPara = signal<'destino' | 'origen' | null>(null);
+  texto = signal('');
+  enLinea = signal<Lugar[]>([]);
+  buscandoEnLinea = signal(false);
+  sugerencias = computed(() => {
+    const t = normalizar(this.texto());
+    const propias = [...this.viaje.recientes(), ...LUGARES];
+    const unicas = propias.filter((l, i) => propias.findIndex((x) => x.nombre === l.nombre) === i);
+    const locales = t ? unicas.filter((l) => normalizar(l.nombre).includes(t)) : unicas.slice(0, 6);
+    return [...locales, ...this.enLinea().filter((l) => !locales.some((x) => x.nombre === l.nombre))];
   });
 
-  /** Recuadro "Llegada estimada" sobre el mapa. */
-  eta = computed(() => {
-    const v = this.viaje();
-    if (!v) {
-      const e = this.estimacion();
-      return e ? { titulo: 'Duración del viaje', min: e.duration_min } : null;
-    }
-    const conductor = this.mapaConductor();
-    const meta = v.status === 'in_progress' ? this.mapaDestino() : this.mapaOrigen();
-    if (!conductor || !meta || v.status === 'requested') return null;
-    // Velocidad promedio en ciudad: 25 km/h
-    const min = Math.max(1, Math.round((distanciaKm(conductor, meta) / 25) * 60));
-    return { titulo: v.status === 'in_progress' ? 'Llegada al destino' : 'Tu conductor llega en', min };
+  // ---------- Destinos frecuentes ----------
+  frecuentes = computed(() => {
+    const d = this.dirs.direcciones();
+    return [
+      { id: 'casa' as const, nombre: 'Casa', icono: 'home', lugar: d.casa },
+      { id: 'trabajo' as const, nombre: 'Trabajo', icono: 'briefcase', lugar: d.trabajo },
+      { id: 'aeropuerto' as const, nombre: 'Aeropuerto', icono: 'airplane', lugar: AEROPUERTO },
+      { id: 'turismo' as const, nombre: 'Turismo', icono: 'umbrella', lugar: TURISMO },
+    ];
   });
-
-  // Calificación del viaje que acaba de terminar
-  porCalificar = signal<Viaje | null>(null);
-  estrellas = signal(0);
-  comentario = '';
-  incidente = false;
 
   constructor() {
-    addIcons({ call, carOutline, carSportOutline, close, closeCircle, diamondOutline, locate, shareSocialOutline, star, starOutline, timeOutline });
+    addIcons({
+      airplane, arrowForward, briefcase, car, chevronForward, close, home, locate, navigate, notificationsOutline,
+      searchOutline, timeOutline, umbrella,
+    });
   }
 
   // ngOnInit: primera carga (al recargar el navegador Ionic no dispara ionViewWillEnter en la primera página).
   ngOnInit(): void {
     this.ionViewWillEnter();
+    this.detectarUbicacion();
   }
 
   ionViewWillEnter(): void {
+    // Revisa cada 10 s si hay un viaje en curso para mostrar el aviso
     this.polling?.unsubscribe();
-    this.polling = interval(5000)
+    this.polling = interval(10000)
       .pipe(startWith(0), switchMap(() => this.cliente.activo()))
-      .subscribe({
-        next: (r) => this.actualizarActivo(r),
-        error: (err) => this.ui.error(err),
-      });
+      .subscribe({ next: (r) => this.activo.set(r), error: () => undefined });
   }
 
   ionViewWillLeave(): void {
     this.polling?.unsubscribe();
   }
 
-  // ---------- Elegir origen y destino ----------
+  // ---------- Buscar ----------
 
-  elegirDeLista(cual: 'origen' | 'destino', nombre: string): void {
-    const lugar = this.lugares.find((l) => l.nombre === nombre) ?? null;
-    this[cual].set(lugar);
-    this.estimar();
+  abrirBuscador(para: 'destino' | 'origen'): void {
+    this.buscandoPara.set(para);
+    this.texto.set('');
+    this.enLinea.set([]);
   }
 
-  /** true si el lugar viene de la lista (se muestra en el selector); false si vino del mapa o del GPS. */
-  esDeLista(lugar: Lugar | null): boolean {
-    return !!lugar && this.lugares.some((l) => l.nombre === lugar.nombre);
+  cerrarBuscador(): void {
+    this.buscandoPara.set(null);
   }
 
-  precio(c: Categoria): number {
-    return precioCategoria(this.estimacion()?.estimated_fare ?? 0, c);
+  escribir(valor: string): void {
+    this.texto.set(valor);
+    clearTimeout(this.temporizador);
+    this.enLinea.set([]);
+    if (valor.trim().length < 3) return;
+    // Espera a que deje de escribir antes de buscar en internet
+    this.temporizador = setTimeout(async () => {
+      this.buscandoEnLinea.set(true);
+      const resultados = await this.busqueda.buscar(valor);
+      if (this.texto() === valor) this.enLinea.set(resultados);
+      this.buscandoEnLinea.set(false);
+    }, 500);
   }
 
-  elegirReciente(lugar: Lugar): void {
-    this.destino.set(lugar);
-    this.estimar();
+  elegir(lugar: Lugar): void {
+    if (this.buscandoPara() === 'origen') this.viaje.origen.set(lugar);
+    else this.viaje.destino.set(lugar);
+    this.cerrarBuscador();
+    this.viaje.estimar();
   }
 
-  /** Tocar el mapa: primero pone el origen, luego el destino (y lo reemplaza si se vuelve a tocar). */
+  quitarDestino(): void {
+    this.viaje.destino.set(null);
+    this.viaje.estimacion.set(null);
+  }
+
+  // ---------- Mapa ----------
+
+  /** Tocar el mapa: si no hay punto de recogida lo pone; si ya hay, pone el destino. */
   tocarMapa(p: Punto): void {
-    if (this.viaje()) return;
     const lugar: Lugar = { nombre: `Punto en el mapa (${p.lat.toFixed(4)}, ${p.lng.toFixed(4)})`, lat: p.lat, lng: p.lng };
-    if (!this.origen()) this.origen.set(lugar);
-    else this.destino.set(lugar);
-    this.estimar();
+    if (!this.viaje.origen()) this.viaje.origen.set(lugar);
+    else this.viaje.destino.set(lugar);
+    this.viaje.estimar();
   }
 
   async usarMiUbicacion(): Promise<void> {
@@ -158,11 +155,9 @@ export class ClienteInicioPage {
     try {
       const p = await this.gps.actual();
       const yo = { lat: p.latitude, lng: p.longitude };
-      this.miPosicion.set(yo);
-      if (!this.viaje()) {
-        this.origen.set({ nombre: 'Mi ubicación', ...yo });
-        this.estimar();
-      }
+      this.viaje.miPosicion.set(yo);
+      this.viaje.origen.set({ nombre: 'Mi ubicación', ...yo });
+      this.viaje.estimar();
     } catch (e) {
       this.ui.toast((e as Error).message, 'danger');
     } finally {
@@ -170,169 +165,57 @@ export class ClienteInicioPage {
     }
   }
 
-  limpiar(cual: 'origen' | 'destino'): void {
-    this[cual].set(null);
-    this.estimacion.set(null);
-  }
-
-  // ---------- Pedir, cancelar, compartir ----------
-
-  pedirViaje(): void {
-    const origen = this.origen();
-    const destino = this.destino();
-    if (!origen || !destino) {
-      this.ui.toast('Escoge el origen y el destino', 'danger');
-      return;
-    }
-    this.enviando.set(true);
-    this.cliente.solicitar(origen, destino, this.categoria()).subscribe({
-      next: (solicitud) => {
-        this.enviando.set(false);
-        this.guardarRuta({ origen, destino });
-        this.guardarReciente(destino);
-        this.origen.set(null);
-        this.destino.set(null);
-        this.estimacion.set(null);
-        this.activo.set({ has_active: true, type: 'request', data: { ...solicitud, status: 'requested' } });
-        this.ui.toast('Buscando conductores disponibles…', 'success');
-      },
-      error: (err) => {
-        this.enviando.set(false);
-        this.ui.error(err);
-      },
-    });
-  }
-
-  async cancelar(): Promise<void> {
-    const v = this.viaje();
-    if (!v) return;
-    const motivo = await this.ui.pedirTexto('Cancelar viaje', 'Motivo (opcional)');
-    if (motivo === null) return;
-    this.cliente.cancelar(v.id, motivo || 'Cancelado por el pasajero').subscribe({
-      next: (mensaje) => {
-        this.ui.toast(mensaje, 'success');
-        this.activo.set({ has_active: false });
-        this.guardarRuta(null);
-      },
-      error: (err) => this.ui.error(err),
-    });
-  }
-
-  /** Comparte el viaje por WhatsApp u otra app (o lo copia si el navegador no permite compartir). */
-  async compartir(): Promise<void> {
-    const v = this.viaje();
-    if (!v) return;
-    const placa = v.vehicle?.plate ? `, placa ${v.vehicle.plate}` : '';
-    const texto = `Voy en un viaje de AUREN con ${v.driver?.user.name ?? 'un conductor'}${placa}. ` +
-      `Desde ${v.origin_name ?? this.rutaGuardada()?.origen.nombre ?? ''} hasta ${v.destination_name ?? this.rutaGuardada()?.destino.nombre ?? ''}.`;
+  /** Al abrir, pone tu ubicación como punto de recogida sin mostrar errores (si no hay permiso se elige a mano). */
+  private async detectarUbicacion(): Promise<void> {
+    if (this.ubicacionAutomatica || this.viaje.origen()) return;
+    this.ubicacionAutomatica = true;
     try {
-      if (navigator.share) {
-        await navigator.share({ title: 'Mi viaje en AUREN', text: texto });
-      } else {
-        await navigator.clipboard.writeText(texto);
-        this.ui.toast('Datos del viaje copiados', 'success');
+      const p = await this.gps.actual();
+      const yo = { lat: p.latitude, lng: p.longitude };
+      this.viaje.miPosicion.set(yo);
+      if (!this.viaje.origen()) {
+        this.viaje.origen.set({ nombre: 'Mi ubicación', ...yo });
+        this.viaje.estimar();
       }
-    } catch { /* el usuario cerró el diálogo de compartir */ }
+    } catch { /* sin permiso o sin GPS */ }
   }
 
-  telefonoConductor = computed(() => {
-    const tel = this.viaje()?.driver?.user.phone;
-    return tel ? `tel:${tel}` : null;
-  });
+  // ---------- Destinos frecuentes ----------
 
-  // ---------- Calificar ----------
-
-  enviarCalificacion(): void {
-    const v = this.porCalificar();
-    if (!v || !this.estrellas()) {
-      this.ui.toast('Escoge de 1 a 5 estrellas', 'danger');
+  irAFrecuente(f: { id: string; nombre: string; lugar: Lugar | null }): void {
+    if (!f.lugar) {
+      this.ui.toast(`Guarda la dirección de tu ${f.nombre.toLowerCase()} para usarla con un toque`);
+      this.router.navigate(['/cliente/direcciones'], { queryParams: { tipo: f.id as TipoDireccion } });
       return;
     }
-    this.cliente.calificar(v.id, this.estrellas(), this.comentario, this.incidente).subscribe({
-      next: (mensaje) => {
-        this.ui.toast(mensaje, 'success');
-        this.cerrarCalificacion();
-      },
-      error: (err) => this.ui.error(err),
-    });
+    this.viaje.destino.set(f.lugar);
+    this.viaje.estimar();
   }
 
-  cerrarCalificacion(): void {
-    this.porCalificar.set(null);
-    this.estrellas.set(0);
-    this.comentario = '';
-    this.incidente = false;
+  // ---------- Avanzar ----------
+
+  notificaciones(): void {
+    if (this.hayViaje()) this.router.navigateByUrl('/cliente/viaje');
+    else this.ui.toast('No tienes notificaciones nuevas');
   }
 
-  // ---------- Internos ----------
-
-  /** Si había un viaje en curso y desaparece de /client/active, terminó: se ofrece calificarlo. */
-  private actualizarActivo(nuevo: ViajeActivo): void {
-    const anterior = this.viaje();
-    if (anterior && this.activo()?.type === 'trip' && !nuevo.has_active && anterior.status === 'in_progress') {
-      this.porCalificar.set(anterior);
+  solicitar(): void {
+    if (this.hayViaje()) {
+      this.router.navigateByUrl('/cliente/viaje');
+      return;
     }
-    if (!nuevo.has_active) this.guardarRuta(null);
-    // Si el servidor trae coordenadas de la solicitud, se usan para el mapa
-    const d = nuevo.data as (Viaje & { origin_latitude?: number; origin_longitude?: number; destination_latitude?: number; destination_longitude?: number }) | undefined;
-    if (d?.origin_latitude && d.destination_latitude && !this.rutaGuardada()) {
-      this.guardarRuta({
-        origen: { nombre: d.origin_name ?? 'Origen', lat: Number(d.origin_latitude), lng: Number(d.origin_longitude) },
-        destino: { nombre: d.destination_name ?? 'Destino', lat: Number(d.destination_latitude), lng: Number(d.destination_longitude) },
-      });
+    if (!this.viaje.origen()) {
+      this.ui.toast('Elige dónde te recogemos: toca "Mi ubicación" o un punto del mapa', 'danger');
+      return;
     }
-    this.activo.set(nuevo);
-  }
-
-  private estimar(): void {
-    const origen = this.origen();
-    const destino = this.destino();
-    this.estimacion.set(null);
-    if (!origen || !destino) return;
-    this.estimando.set(true);
-    this.cliente.estimar(origen, destino).subscribe({
-      next: (e) => {
-        this.estimando.set(false);
-        this.estimacion.set(e);
-      },
-      error: (err) => {
-        this.estimando.set(false);
-        this.ui.error(err);
-      },
-    });
-  }
-
-  private guardarReciente(lugar: Lugar): void {
-    const lista = [lugar, ...this.recientes().filter((l) => l.nombre !== lugar.nombre)].slice(0, 4);
-    this.recientes.set(lista);
-    this.escribir(CLAVE_RECIENTES, lista);
-  }
-
-  private guardarRuta(ruta: { origen: Lugar; destino: Lugar } | null): void {
-    this.rutaGuardada.set(ruta);
-    this.escribir(CLAVE_RUTA, ruta);
-  }
-
-  private leer<T>(clave: string, porDefecto: T): T {
-    try {
-      const v = localStorage.getItem(clave);
-      return v ? (JSON.parse(v) as T) : porDefecto;
-    } catch {
-      return porDefecto;
+    if (!this.viaje.destino()) {
+      this.abrirBuscador('destino');
+      return;
     }
-  }
-
-  private escribir(clave: string, valor: unknown): void {
-    try {
-      if (valor === null) localStorage.removeItem(clave);
-      else localStorage.setItem(clave, JSON.stringify(valor));
-    } catch { /* sin almacenamiento */ }
+    this.router.navigateByUrl('/cliente/vehiculo');
   }
 }
 
-/** Distancia en km entre dos puntos (fórmula de Haversine). */
-function distanciaKm(a: Punto, b: Punto): number {
-  const rad = (g: number) => (g * Math.PI) / 180;
-  const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2;
-  return 2 * 6371 * Math.asin(Math.sqrt(h));
+function normalizar(t: string): string {
+  return t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }

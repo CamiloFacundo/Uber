@@ -18,6 +18,8 @@ export interface DatosRegistro {
   year?: number;
   capacity?: number;
   color?: string;
+  /** car | moto (campo extra de AUREN) */
+  vehicle_type?: 'car' | 'moto';
 }
 
 /**

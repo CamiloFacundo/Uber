@@ -1,0 +1,101 @@
+<ion-content class="viaje" [fullscreen]="true">
+  <div class="pagina">
+    <header class="cabecera">
+      <button type="button" class="icono-boton" (click)="volver()" aria-label="Volver a Inicio">
+        <ion-icon name="arrow-back"></ion-icon>
+      </button>
+      <h1>{{ buscando() ? 'Buscando conductor' : 'Tu viaje en camino' }}</h1>
+      @if (telefono(); as tel) {
+        <a class="icono-boton" [href]="tel" aria-label="Llamar al conductor"><ion-icon name="call"></ion-icon></a>
+      } @else {
+        <span class="icono-boton vacio" aria-hidden="true"></span>
+      }
+    </header>
+
+    @if (viaje(); as v) {
+      <!-- Conductor -->
+      @if (v.driver; as d) {
+        <section class="conductor">
+          <span class="avatar" aria-hidden="true">{{ d.user.name.charAt(0) }}</span>
+          <div class="conductor-datos">
+            <strong>{{ d.user.name }}</strong>
+            @if (d.rating_average) {
+              <span class="calificacion"><ion-icon name="star" aria-hidden="true"></ion-icon> {{ d.rating_average | number: '1.1-1' }}</span>
+            }
+            @if (v.vehicle; as veh) {
+              <span class="vehiculo">{{ veh.brand }} {{ veh.model }}, {{ veh.color }}</span>
+            }
+          </div>
+          @if (v.vehicle; as veh) {
+            <span class="placa">{{ veh.plate }}</span>
+          }
+        </section>
+      } @else {
+        <section class="buscando">
+          <span class="pulso" aria-hidden="true"></span>
+          <div>
+            <strong>Buscando un conductor cercano</strong>
+            <p>Te avisamos aquí apenas alguien acepte tu viaje.</p>
+          </div>
+        </section>
+      }
+
+      <!-- Mapa -->
+      <div class="mapa">
+        <app-mapa
+          [origen]="mapaOrigen()"
+          [destino]="mapaDestino()"
+          [conductor]="mapaConductor()"
+          [tipoVehiculo]="viaje()?.vehicle?.type === 'moto' ? 'moto' : 'car'"
+        ></app-mapa>
+        @if (eta(); as e) {
+          <div class="eta" aria-live="polite">
+            <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+            <div>
+              @if (e.min !== null) {
+                <span>Llegada estimada</span>
+                <strong>{{ e.min }} min</strong>
+              }
+              <small>{{ e.texto }}</small>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Estado y recorrido -->
+      <div class="detalle">
+        <div class="detalle-cabeza">
+          <span class="insignia">{{ estado().texto }}</span>
+          <strong>{{ (v.final_fare ?? v.estimated_fare) | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+        <div class="parada"><span class="punto origen" aria-hidden="true"></span>{{ nombreOrigen() }}</div>
+        <div class="parada"><span class="punto destino" aria-hidden="true"></span>{{ nombreDestino() }}</div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="acciones">
+        <button type="button" class="accion" (click)="compartir()" [disabled]="!v.driver">
+          <ion-icon name="share-social-outline" aria-hidden="true"></ion-icon>
+          Compartir viaje
+        </button>
+        @if (telefono(); as tel) {
+          <a class="accion" [href]="tel">
+            <ion-icon name="call" aria-hidden="true"></ion-icon>
+            Llamar
+          </a>
+        } @else {
+          <button type="button" class="accion" disabled>
+            <ion-icon name="call" aria-hidden="true"></ion-icon>
+            Llamar
+          </button>
+        }
+        <button type="button" class="accion peligro" (click)="cancelar()" [disabled]="!puedeCancelar()">
+          <ion-icon name="close-circle-outline" aria-hidden="true"></ion-icon>
+          Cancelar
+        </button>
+      </div>
+    } @else if (cargado()) {
+      <p class="sin-viaje">No tienes un viaje en curso.</p>
+    }
+  </div>
+</ion-content>

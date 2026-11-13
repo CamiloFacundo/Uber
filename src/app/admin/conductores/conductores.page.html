@@ -1,48 +1,102 @@
-<ion-header>
-  <ion-toolbar color="dark">
-    <ion-title>Conductores</ion-title>
-  </ion-toolbar>
-  <ion-toolbar>
-    <ion-segment [value]="filtro()" (ionChange)="cambiarFiltro($any($event.detail.value))" [scrollable]="true">
-      <ion-segment-button value="pending"><ion-label>Pendientes</ion-label></ion-segment-button>
-      <ion-segment-button value="approved"><ion-label>Aprobados</ion-label></ion-segment-button>
-      <ion-segment-button value="suspended"><ion-label>Suspendidos</ion-label></ion-segment-button>
-      <ion-segment-button value="todos"><ion-label>Todos</ion-label></ion-segment-button>
-    </ion-segment>
-  </ion-toolbar>
-</ion-header>
+<ion-header class="ion-no-border"><app-admin-barra></app-admin-barra></ion-header>
 
-<ion-content>
-  @for (c of conductores(); track c.id) {
-    <ion-card>
-      <ion-card-header>
-        <ion-card-subtitle>
-          <ion-badge [color]="aprobacion[c.approval_status].color">{{ aprobacion[c.approval_status].texto }}</ion-badge>
-        </ion-card-subtitle>
-        <ion-card-title>{{ c.user.name }}</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <p><ion-icon name="mail-outline"></ion-icon> {{ c.user.email }}</p>
-        <p><ion-icon name="id-card-outline"></ion-icon> Licencia {{ c.license_number }}</p>
-        @for (v of c.vehicles; track v.plate) {
-          <p><ion-icon name="car-outline"></ion-icon> {{ v.brand }} {{ v.model }} {{ v.year }} · <strong>{{ v.plate }}</strong></p>
-        }
-        <p><ion-icon name="star" color="warning"></ion-icon> {{ c.rating_average | number: '1.1-2' }}</p>
+<ion-content class="admin-pagina">
+  <div class="admin-contenido">
+    <div class="admin-titulo">
+      <div>
+        <h1>Conductores</h1>
+        <p>Registro, verificación de documentos y estado de las cuentas</p>
+      </div>
+      <input class="buscar" type="search" placeholder="Buscar por nombre, placa o licencia" [value]="texto()" (input)="texto.set($any($event.target).value)" />
+    </div>
 
-        <div class="acciones">
-          @if (c.approval_status !== 'approved') {
-            <ion-button size="small" color="success" (click)="cambiar(c, 'approved')">Aprobar</ion-button>
+    <div class="pestanas" role="tablist">
+      @for (f of filtros; track f.id) {
+        <button type="button" role="tab" [attr.aria-selected]="filtro() === f.id" [class.activa]="filtro() === f.id" (click)="filtro.set(f.id)">
+          {{ f.nombre }} <span>{{ conteo()[f.id] ?? 0 }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="lista">
+      @for (c of lista(); track c.id) {
+        <article class="admin-tarjeta conductor">
+          <button type="button" class="fila" (click)="alternar(c.id)" [attr.aria-expanded]="abierto() === c.id">
+            <span class="avatar" aria-hidden="true">{{ c.user.name.charAt(0) }}</span>
+            <span class="principal">
+              <strong>{{ c.user.name }}</strong>
+              <small>{{ c.user.email }}</small>
+            </span>
+            <span class="vehiculo">
+              @if (c.vehicles[0]; as v) {
+                <span class="placa">{{ v.plate }}</span>
+                <small>{{ v.brand }} {{ v.model }}</small>
+              }
+            </span>
+            <span class="cifras">
+              <span><ion-icon name="star" aria-hidden="true"></ion-icon> {{ c.rating_average | number: '1.1-1' }}</span>
+              <small>{{ c.viajes }} viajes</small>
+            </span>
+            <span class="insignia" [attr.data-estado]="c.approval_status">{{ aprobacion[c.approval_status].texto }}</span>
+            <ion-icon class="flecha" [name]="abierto() === c.id ? 'chevron-up' : 'chevron-down'" aria-hidden="true"></ion-icon>
+          </button>
+
+          @if (abierto() === c.id) {
+            <div class="detalle">
+              <dl class="datos">
+                <div><dt>Teléfono</dt><dd>{{ c.user.phone ?? 'No registrado' }}</dd></div>
+                <div><dt>Licencia</dt><dd>{{ c.license_number }}</dd></div>
+                @for (v of c.vehicles; track v.plate) {
+                  <div><dt>Vehículo</dt><dd>{{ v.brand }} {{ v.model }} {{ v.year }}, {{ v.color }}, {{ v.capacity ?? 4 }} puestos</dd></div>
+                }
+                <div><dt>Disponibilidad</dt><dd>{{ c.availability_status === 'available' ? 'En línea' : 'Desconectado' }}</dd></div>
+                <div><dt>Ganancias generadas</dt><dd>{{ c.ganancias | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd></div>
+              </dl>
+
+              @if (c.approval_status === 'pending') {
+                <fieldset class="documentos">
+                  <legend>Verificación de documentos</legend>
+                  @for (d of documentos; track d) {
+                    <label>
+                      <input type="checkbox" [checked]="(revisados()[c.id] ?? []).includes(d)" (change)="marcar(c.id, d)" />
+                      {{ d }}
+                    </label>
+                  }
+                  <p class="admin-nota">Marca cada documento revisado para poder aprobar. La lista se guarda en las notas de la aprobación.</p>
+                </fieldset>
+              }
+
+              <div class="acciones">
+                @switch (c.approval_status) {
+                  @case ('pending') {
+                    <button type="button" class="boton aprobar" [disabled]="!documentosCompletos(c.id) || enviando() === c.id" (click)="cambiar(c, 'approved')">
+                      <ion-icon name="checkmark-circle" aria-hidden="true"></ion-icon> Aprobar
+                    </button>
+                    <button type="button" class="boton rechazar" [disabled]="enviando() === c.id" (click)="cambiar(c, 'rejected')">
+                      <ion-icon name="close-circle-outline" aria-hidden="true"></ion-icon> Rechazar
+                    </button>
+                  }
+                  @case ('approved') {
+                    <button type="button" class="boton rechazar" [disabled]="enviando() === c.id" (click)="cambiar(c, 'suspended')">
+                      <ion-icon name="pause-circle-outline" aria-hidden="true"></ion-icon> Suspender cuenta
+                    </button>
+                  }
+                  @default {
+                    <button type="button" class="boton aprobar" [disabled]="enviando() === c.id" (click)="cambiar(c, 'approved')">
+                      <ion-icon name="play-circle-outline" aria-hidden="true"></ion-icon> Habilitar cuenta
+                    </button>
+                  }
+                }
+                @if (c.user.phone) {
+                  <a class="boton" [href]="'tel:' + c.user.phone"><ion-icon name="call-outline" aria-hidden="true"></ion-icon> Llamar</a>
+                }
+              </div>
+            </div>
           }
-          @if (c.approval_status === 'approved') {
-            <ion-button size="small" color="danger" fill="outline" (click)="cambiar(c, 'suspended')">Suspender</ion-button>
-          }
-          @if (c.approval_status === 'pending') {
-            <ion-button size="small" color="medium" fill="outline" (click)="cambiar(c, 'rejected')">Rechazar</ion-button>
-          }
-        </div>
-      </ion-card-content>
-    </ion-card>
-  } @empty {
-    <p class="ion-padding">No hay conductores en esta categoría.</p>
-  }
+        </article>
+      } @empty {
+        <p class="admin-nota">{{ datos.cargado() ? 'No hay conductores en esta categoría.' : 'Cargando conductores...' }}</p>
+      }
+    </div>
+  </div>
 </ion-content>

@@ -4,10 +4,10 @@ import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Se ejecuta en CADA petición HTTP:
- * 1. Agrega  Accept: application/json  (para que Laravel responda errores en JSON y no en HTML).
- * 2. Agrega  Authorization: Bearer <token>  (igual que en Postman).
- * 3. Si el backend responde 401 (token vencido o inválido), cierra la sesión.
+ * Interceptor de todas las peticiones HTTP:
+ * - Accept: application/json, para que Laravel devuelva los errores en JSON.
+ * - Authorization: Bearer <token> si hay sesión.
+ * - Ante un 401 (token vencido o inválido) cierra la sesión local.
  */
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);

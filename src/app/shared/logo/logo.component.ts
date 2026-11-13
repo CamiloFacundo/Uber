@@ -67,7 +67,7 @@ let siguienteId = 0;
       flex: none;
     }
     .nombre {
-      font-family: var(--rd-letra, system-ui, sans-serif);
+      font-family: var(--rd-titulos, system-ui, sans-serif);
       font-size: calc(var(--alto) * 0.72);
       font-weight: 700;
       line-height: 1;

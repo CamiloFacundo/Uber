@@ -4,9 +4,7 @@ import { Rol } from '../models/models';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Protege las rutas de cada módulo.
- * - Si no hay sesión, manda al login.
- * - Si el rol no corresponde (ej: un cliente intentando entrar a /admin), lo manda a su propio inicio.
+ * Guard por rol para cada módulo: sin sesión redirige al login; con otro rol, al inicio de su módulo.
  */
 export function roleGuard(rol: Rol): CanMatchFn {
   return () => {

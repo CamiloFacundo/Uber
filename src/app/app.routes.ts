@@ -7,6 +7,11 @@ import { invitadoGuard, roleGuard } from './core/guards/role.guard';
  */
 export const routes: Routes = [
   {
+    path: 'bienvenida',
+    canMatch: [invitadoGuard],
+    loadComponent: () => import('./auth/bienvenida/bienvenida.page').then((m) => m.BienvenidaPage),
+  },
+  {
     path: 'login',
     canMatch: [invitadoGuard],
     loadComponent: () => import('./auth/login/login.page').then((m) => m.LoginPage),
@@ -36,6 +41,6 @@ export const routes: Routes = [
     canMatch: [roleGuard('client')],
     loadChildren: () => import('./cliente/cliente.routes').then((m) => m.CLIENTE_ROUTES),
   },
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: '**', redirectTo: 'login' },
+  { path: '', redirectTo: 'bienvenida', pathMatch: 'full' },
+  { path: '**', redirectTo: 'bienvenida' },
 ];

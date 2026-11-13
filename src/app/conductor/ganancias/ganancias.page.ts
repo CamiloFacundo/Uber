@@ -1,132 +1,176 @@
-import { Component, computed, inject } from '@angular/core';
-import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
-import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular';
-import { ConductorService } from '../../core/services/conductor.service';
+import { Component, computed, inject, signal } from '@angular/core';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
+import { IonContent, IonLabel, IonSegment, IonSegmentButton } from '@ionic/angular';
+import { ComisionService } from '../../core/services/comision.service';
+import { ConductorService, ViajeTerminado } from '../../core/services/conductor.service';
+import { Barra, BarrasComponent } from '../../shared/graficas/barras.component';
+import { duracion } from '../../shared/tiempo';
 
+type Periodo = 'hoy' | 'semana' | 'mes';
 const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 
 /**
- * Ganancias del conductor. La API no tiene historial del conductor, así que se calcula con los
- * viajes que finalizó en este dispositivo (ConductorService.terminados).
+ * Mis ganancias: Hoy / Semana / Mes con gráfica, viajes, tiempo en línea y el desglose
+ * bruto → comisión AUREN → neto. La API no tiene historial ni ganancias del conductor, así que
+ * se calcula con los viajes que finalizó en este dispositivo.
  */
 @Component({
   selector: 'app-conductor-ganancias',
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, IonHeader, IonToolbar, IonTitle, IonContent],
+  imports: [CurrencyPipe, DecimalPipe, IonContent, IonSegment, IonSegmentButton, IonLabel, BarrasComponent],
   template: `
-    <ion-header>
-      <ion-toolbar color="dark"><ion-title>Ganancias</ion-title></ion-toolbar>
-    </ion-header>
-    <ion-content class="ganancias">
-      <div class="contenido">
-        <section class="kpis" aria-label="Resumen">
-          <div class="kpi">
-            <span>Últimos 7 días</span>
-            <strong>{{ totalSemana() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
-          </div>
-          <div class="kpi">
-            <span>Viajes</span>
-            <strong>{{ viajesSemana() }}</strong>
-          </div>
-          <div class="kpi">
-            <span>Kilómetros</span>
-            <strong>{{ kmSemana() | number: '1.0-1' }}</strong>
-          </div>
+    <ion-content class="ganancias" [fullscreen]="true">
+      <div class="pagina">
+        <h1>Mis ganancias</h1>
+
+        <ion-segment [value]="periodo()" (ionChange)="periodo.set($any($event.detail.value))">
+          <ion-segment-button value="hoy"><ion-label>Hoy</ion-label></ion-segment-button>
+          <ion-segment-button value="semana"><ion-label>Semana</ion-label></ion-segment-button>
+          <ion-segment-button value="mes"><ion-label>Mes</ion-label></ion-segment-button>
+        </ion-segment>
+
+        <section class="total" aria-label="Total del periodo">
+          <span>Ganancia neta {{ textoPeriodo() }}</span>
+          <strong>{{ resumen().neto | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+          <small>de {{ resumen().bruto | currency: 'COP' : 'symbol-narrow' : '1.0-0' }} cobrados</small>
         </section>
 
         <section class="tarjeta">
-          <h2>Por día</h2>
-          <div class="barras" role="img" aria-label="Gráfica de ganancias de los últimos 7 días">
-            @for (d of dias(); track d.clave) {
-              <div class="barra" [class.hoy]="d.esHoy">
-                <span class="valor">{{ d.total ? (d.total | currency: 'COP' : 'symbol-narrow' : '1.0-0') : '' }}</span>
-                <span class="columna" [style.height.%]="d.alto || 2" [class.vacia]="!d.total"></span>
-                <span class="dia">{{ d.esHoy ? 'hoy' : d.nombre }}</span>
-              </div>
-            }
-          </div>
-          @if (mejorDia(); as m) {
-            <p class="nota">Tu mejor día {{ m.esHoy ? 'es hoy' : 'fue el ' + m.nombre }}, con {{ m.total | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}.</p>
-          }
+          <h2>{{ tituloGrafica() }}</h2>
+          <app-barras [puntos]="barras()" [titulo]="tituloGrafica()"></app-barras>
         </section>
 
+        <dl class="kpis">
+          <div>
+            <dt>Viajes</dt>
+            <dd>{{ resumen().viajes }}</dd>
+          </div>
+          <div>
+            <dt>Tiempo en línea</dt>
+            <dd>{{ duracion(resumen().minutos) }}</dd>
+          </div>
+          <div>
+            <dt>Kilómetros</dt>
+            <dd>{{ resumen().km | number: '1.0-1' }}</dd>
+          </div>
+          <div>
+            <dt>Promedio por viaje</dt>
+            <dd>{{ resumen().promedio | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+          </div>
+        </dl>
+
         <section class="tarjeta">
-          <h2>Viajes terminados</h2>
-          @for (t of terminados(); track t.id) {
-            <div class="viaje">
-              <div>
-                <strong>{{ t.destino || 'Viaje #' + t.id }}</strong>
-                <span>{{ t.fecha | date: "d 'de' MMM, h:mm a" }}{{ t.origen ? ', desde ' + t.origen : '' }}</span>
-              </div>
-              <strong class="monto">{{ t.tarifa | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
-            </div>
-          } @empty {
-            <p class="nota">Cuando finalices tu primer viaje, tus ganancias aparecerán aquí.</p>
-          }
-          <p class="aclaracion">Se cuentan los viajes finalizados en este dispositivo.</p>
+          <h2>Desglose</h2>
+          <dl class="desglose">
+            <div><dt>Valor de los viajes</dt><dd>{{ resumen().bruto | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd></div>
+            <div><dt>Comisión AUREN ({{ comision.porcentaje() }}%)</dt><dd>−{{ resumen().comision | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd></div>
+            <div class="neto"><dt>Tu ganancia</dt><dd>{{ resumen().neto | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd></div>
+          </dl>
+          <p class="nota">
+            Se cuentan los viajes finalizados en este dispositivo. La comisión la define el administrador de AUREN.
+          </p>
         </section>
       </div>
     </ion-content>
   `,
   styles: `
     ion-content.ganancias { --background: var(--rd-fondo); }
-    h2, p { margin: 0; }
-    .contenido { display: flex; flex-direction: column; gap: 16px; max-width: 760px; margin: 0 auto; padding: 16px; }
-    .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .kpi { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 14px; background: var(--rd-superficie); }
-    .kpi span { font-size: 12px; color: var(--rd-suave); }
-    .kpi strong { font-size: 19px; font-weight: 700; }
-    .tarjeta { padding: 16px; border-radius: 14px; background: var(--rd-superficie); }
-    .tarjeta h2 { margin-bottom: 14px; font-size: 16px; font-weight: 700; }
-    .barras { display: grid; grid-template-columns: repeat(7, 1fr); align-items: end; gap: 8px; height: 160px; }
-    .barra { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; }
-    .barra .valor { font-size: 10px; color: var(--rd-suave); white-space: nowrap; }
-    .barra .columna { width: 100%; max-width: 32px; border-radius: 6px 6px 2px 2px; background: var(--rd-primario); opacity: 0.55; }
-    .barra.hoy .columna { opacity: 1; }
-    .barra .columna.vacia { background: var(--rd-linea); opacity: 1; }
-    .barra .dia { font-size: 12px; color: var(--rd-suave); }
-    .barra.hoy .dia { font-weight: 700; color: var(--rd-tinta); }
-    .nota { margin-top: 12px; font-size: 14px; color: var(--rd-suave); }
-    .viaje { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--rd-linea); }
-    .viaje div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .viaje span { font-size: 13px; color: var(--rd-suave); }
-    .monto { flex: none; font-size: 16px; }
-    .aclaracion { margin-top: 12px; font-size: 12px; color: var(--rd-suave); }
+    h1, h2, p, dl, dd { margin: 0; }
+    .pagina {
+      display: flex; flex-direction: column; gap: 16px; max-width: 640px; margin: 0 auto;
+      padding: calc(env(safe-area-inset-top) + 18px) 18px 24px;
+    }
+    h1 { font-size: 26px; font-weight: 700; }
+    .total {
+      display: flex; flex-direction: column; gap: 4px; padding: 20px; border-radius: 20px; color: #f5f2ea;
+      background: radial-gradient(120% 120% at 100% 0%, rgba(200, 169, 106, 0.28), transparent 55%), linear-gradient(135deg, #087f8c, #0b4f5a 70%, #101827);
+    }
+    .total span { font-size: 14px; color: rgba(245, 242, 234, 0.8); }
+    .total strong { font-family: var(--rd-titulos); font-size: 36px; font-weight: 700; letter-spacing: -0.01em; }
+    .total small { font-size: 13px; color: rgba(245, 242, 234, 0.75); }
+    .tarjeta { padding: 16px 18px; border-radius: 18px; background: var(--rd-superficie); }
+    .tarjeta h2 { font-size: 16px; font-weight: 700; }
+    .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .kpis div { padding: 14px; border-radius: 16px; background: var(--rd-superficie); }
+    .kpis dt { font-size: 12px; color: var(--rd-suave); }
+    .kpis dd { margin-top: 4px; font-family: var(--rd-titulos); font-size: 20px; font-weight: 700; }
+    .desglose { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+    .desglose div { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+    .desglose dt { color: var(--rd-suave); }
+    .desglose dd { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .desglose .neto { padding-top: 12px; border-top: 1px solid var(--rd-linea); }
+    .desglose .neto dt { font-weight: 700; color: var(--rd-tinta); }
+    .desglose .neto dd { font-family: var(--rd-titulos); font-size: 20px; font-weight: 700; color: var(--rd-cta); }
+    .nota { margin-top: 14px; font-size: 12px; color: var(--rd-suave); }
   `,
 })
 export class ConductorGananciasPage {
   private conductor = inject(ConductorService);
+  comision = inject(ComisionService);
+  duracion = duracion;
 
-  terminados = this.conductor.terminados;
+  periodo = signal<Periodo>('semana');
 
-  private desde = () => {
+  /** Desde cuándo cuenta el periodo elegido */
+  private desde = computed(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 6);
     d.setHours(0, 0, 0, 0);
+    if (this.periodo() === 'semana') d.setDate(d.getDate() - 6);
+    if (this.periodo() === 'mes') d.setDate(1);
     return d;
-  };
-  private deLaSemana = computed(() => this.terminados().filter((t) => new Date(t.fecha) >= this.desde()));
-  totalSemana = computed(() => this.deLaSemana().reduce((s, t) => s + t.tarifa, 0));
-  viajesSemana = computed(() => this.deLaSemana().length);
-  kmSemana = computed(() => this.deLaSemana().reduce((s, t) => s + t.km, 0));
+  });
+  private viajes = computed(() => this.conductor.terminados().filter((t) => new Date(t.fecha) >= this.desde()));
 
-  dias = computed(() => {
-    const hoy = new Date();
-    const lista = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 6 + i);
-      return { clave: d.toDateString(), nombre: DIAS[d.getDay()], esHoy: i === 6, total: 0 };
-    });
-    for (const t of this.deLaSemana()) {
-      const dia = lista.find((d) => d.clave === new Date(t.fecha).toDateString());
-      if (dia) dia.total += t.tarifa;
+  textoPeriodo = computed(() => ({ hoy: 'de hoy', semana: 'de los últimos 7 días', mes: 'de este mes' })[this.periodo()]);
+  tituloGrafica = computed(() => ({ hoy: 'Hoy por horas', semana: 'Últimos 7 días', mes: 'Este mes por semanas' })[this.periodo()]);
+
+  resumen = computed(() => {
+    const lista = this.viajes();
+    const bruto = suma(lista);
+    return {
+      ...this.comision.desglose(bruto),
+      viajes: lista.length,
+      km: lista.reduce((s, t) => s + t.km, 0),
+      promedio: lista.length ? bruto / lista.length : 0,
+      minutos: this.conductor.minutosEnLinea(this.desde()),
+    };
+  });
+
+  /** Barras con la ganancia neta: por franjas de 3 h (hoy), por día (semana) o por semana del mes */
+  barras = computed<Barra[]>(() => {
+    const lista = this.viajes();
+    const neto = (v: ViajeTerminado[]) => this.comision.desglose(suma(v)).neto;
+    const ahora = new Date();
+
+    if (this.periodo() === 'hoy') {
+      return Array.from({ length: 8 }, (_, i) => {
+        const h = i * 3;
+        return {
+          etiqueta: `${h}h`,
+          valor: neto(lista.filter((t) => Math.floor(new Date(t.fecha).getHours() / 3) === i)),
+          actual: Math.floor(ahora.getHours() / 3) === i,
+        };
+      });
     }
-    const max = Math.max(1, ...lista.map((d) => d.total));
-    return lista.map((d) => ({ ...d, alto: Math.round((d.total / max) * 100) }));
+    if (this.periodo() === 'semana') {
+      return Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 6 + i);
+        return {
+          etiqueta: i === 6 ? 'hoy' : DIAS[d.getDay()],
+          valor: neto(lista.filter((t) => new Date(t.fecha).toDateString() === d.toDateString())),
+          actual: i === 6,
+        };
+      });
+    }
+    // Mes: semana 1 = días 1-7, semana 2 = 8-14...
+    const semanas = Math.ceil(new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).getDate() / 7);
+    return Array.from({ length: semanas }, (_, i) => ({
+      etiqueta: `Sem ${i + 1}`,
+      valor: neto(lista.filter((t) => Math.floor((new Date(t.fecha).getDate() - 1) / 7) === i)),
+      actual: Math.floor((ahora.getDate() - 1) / 7) === i,
+    }));
   });
+}
 
-  /** Solo tiene sentido comparar si trabajó más de un día. */
-  mejorDia = computed(() => {
-    const conGanancias = this.dias().filter((d) => d.total > 0);
-    if (conGanancias.length < 2) return null;
-    return [...conGanancias].sort((a, b) => b.total - a.total)[0];
-  });
+function suma(lista: ViajeTerminado[]): number {
+  return lista.reduce((s, t) => s + t.tarifa, 0);
 }

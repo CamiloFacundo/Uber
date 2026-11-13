@@ -71,3 +71,7 @@ Thumbs.db
 
 # Archivos de pruebas automáticas del navegador
 .playwright-mcp/
+
+# Configuración local de herramientas de IA/diseño
+.claude/
+.impeccable/

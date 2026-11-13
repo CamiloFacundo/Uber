@@ -1,57 +1,42 @@
-/*
- * App Global CSS
- * ----------------------------------------------------------------------------
- * Put style rules here that you want to apply globally. These styles are for
- * the entire app and not just one component. Additionally, this file can be
- * used as an entry point to import other CSS/Sass files to be included in the
- * output CSS.
- * For more information on global stylesheets, visit the documentation:
- * https://ionicframework.com/docs/layout/global-stylesheets
- */
+/* Estilos globales: CSS base de Ionic, tokens de AUREN (--rd-*) y estilos compartidos entre módulos. */
 
-/* Core CSS required for Ionic components to work properly */
+/* CSS mínimo para que funcionen los componentes de Ionic */
 @import "@ionic/angular/css/core.css";
 
-/* Basic CSS for apps built with Ionic */
+/* Normalización, estructura y tipografía base de Ionic */
 @import "@ionic/angular/css/normalize.css";
 @import "@ionic/angular/css/structure.css";
 @import "@ionic/angular/css/typography.css";
 @import "@ionic/angular/css/display.css";
 
-/* Optional CSS utils that can be commented out */
+/* Utilidades opcionales de Ionic (padding, flex, texto) */
 @import "@ionic/angular/css/padding.css";
 @import "@ionic/angular/css/float-elements.css";
 @import "@ionic/angular/css/text-alignment.css";
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
 
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
-
-/* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';
+/* Modo oscuro por clase (.ion-palette-dark), controlado por TemaService */
+@import '@ionic/angular/css/palettes/dark.class.css';
 
 /*
- * Identidad visual de AUREN ("Cada destino merece una mejor experiencia").
+ * Identidad visual de AUREN ("Tu destino, nuestra prioridad").
  *   Teal principal  #087F8C  color principal: selección, enlaces, ruta, "en línea"
  *   Dorado premium  #C8A96A  botón principal de cada pantalla, destino, detalles de marca
  *   Azul noche      #101827  texto, barras y paneles oscuros
  *   Crema claro     #F5F2EA  fondo
  *   Gris suave      #687386  texto secundario
- * Letra: Overpass (instalada localmente, funciona sin internet).
+ * Tipografía (instalada localmente, funciona sin internet):
+ *   Montserrat  títulos y botones   (--rd-titulos)
+ *   Inter       textos              (--rd-letra)
  * Los colores de Ionic (primary, dark, success...) están en theme/variables.scss y usan estos mismos valores.
- * Los nombres --rd-* se mantienen para no tocar cada pantalla.
  */
-@import "@fontsource-variable/overpass/wght.css";
+@import "@fontsource-variable/montserrat/wght.css";
+@import "@fontsource-variable/inter/wght.css";
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  --ion-font-family: 'Overpass Variable', system-ui, sans-serif;
+  --ion-font-family: 'Inter Variable', system-ui, sans-serif;
 
   --rd-fondo: #f5f2ea;
   --rd-superficie: #ffffff;
@@ -78,36 +63,46 @@
   --rd-alerta: #c2413a;
   --rd-alerta-suave: #fbeeec;
   --rd-alerta-borde: #efc8c4;
-  --rd-letra: 'Overpass Variable', system-ui, sans-serif;
+  --rd-letra: 'Inter Variable', system-ui, sans-serif;
+  --rd-titulos: 'Montserrat Variable', 'Inter Variable', system-ui, sans-serif;
+
+  // Colores de gráficas (validados para daltonismo y contraste sobre fondo claro)
+  --rd-graf-1: #0089a3; // completados / serie principal
+  --rd-graf-2: #b07f1e; // activos
+  --rd-graf-3: #c2475e; // cancelados
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --rd-fondo: #101827;
-    --rd-superficie: #182234;
-    --rd-tinta: #f5f2ea;
-    --rd-suave: #98a1b3;
-    --rd-linea: #283449;
-    --rd-primario: #17a9b8;
-    --rd-primario-hover: #22bccb;
-    --rd-sobre-primario: #101827;
-    --rd-anillo: rgba(23, 169, 184, 0.3);
-    --rd-cta: #c8a96a;
-    --rd-cta-hover: #d6b97c;
-    --rd-sobre-cta: #101827;
-    --rd-acento: #c8a96a;
-    --rd-primario-texto: #3cc4d2;
-    --rd-primario-suave: #12313a;
-    --rd-noche: #0b111d;
-    --rd-rio: #17a9b8;
-    --rd-rio-suave: #12313a;
-    --rd-sol: #c8a96a;
-    --rd-asfalto: #283449;
-    --rd-alerta: #ff8a80;
-    --rd-alerta-suave: #2e1a1e;
-    --rd-alerta-borde: #5a2a2d;
-  }
+// Modo oscuro: lo activa TemaService con la clase .ion-palette-dark (por defecto la app es oscura).
+:root.ion-palette-dark {
+  --rd-fondo: #101827;
+  --rd-superficie: #182234;
+  --rd-tinta: #f5f2ea;
+  --rd-suave: #98a1b3;
+  --rd-linea: #283449;
+  --rd-primario: #17a9b8;
+  --rd-primario-hover: #22bccb;
+  --rd-sobre-primario: #101827;
+  --rd-anillo: rgba(23, 169, 184, 0.3);
+  --rd-cta: #c8a96a;
+  --rd-cta-hover: #d6b97c;
+  --rd-sobre-cta: #101827;
+  --rd-acento: #c8a96a;
+  --rd-primario-texto: #3cc4d2;
+  --rd-primario-suave: #12313a;
+  --rd-noche: #0b111d;
+  --rd-rio: #17a9b8;
+  --rd-rio-suave: #12313a;
+  --rd-sol: #c8a96a;
+  --rd-asfalto: #283449;
+  --rd-alerta: #ff8a80;
+  --rd-alerta-suave: #2e1a1e;
+  --rd-alerta-borde: #5a2a2d;
+  // Colores de gráficas validados sobre la superficie oscura (#182234)
+  --rd-graf-1: #0f9aa8;
+  --rd-graf-2: #b8801c;
+  --rd-graf-3: #d9566f;
 }
+
 
 /* ---- Estilos compartidos de la app ---- */
 .buscando {
@@ -164,4 +159,110 @@
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 8px;
+}
+
+/* ---- Tipografía: Montserrat en títulos y botones, Inter en el resto ---- */
+h1,
+h2,
+h3,
+ion-title,
+button,
+ion-button,
+ion-segment-button,
+ion-tab-button,
+ion-list-header,
+ion-card-title {
+  font-family: var(--rd-titulos);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Panel del administrador: estructura común de las secciones ---- */
+ion-content.admin-pagina {
+  --background: var(--rd-fondo);
+  --color: var(--rd-tinta);
+}
+
+.admin-contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 24px 40px;
+
+  @media (max-width: 720px) {
+    padding: 16px 14px 32px;
+  }
+}
+
+.admin-titulo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  h1 {
+    margin: 0;
+    font-size: clamp(24px, 3vw, 32px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 15px;
+    color: var(--rd-suave);
+  }
+}
+
+.admin-tarjeta {
+  padding: 18px;
+  border: 1px solid var(--rd-linea);
+  border-radius: 18px;
+  background: var(--rd-superficie);
+
+  > h2,
+  .admin-tarjeta-cabeza h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+  }
+}
+
+.admin-tarjeta-cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+
+  a {
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--rd-primario-texto);
+  }
+}
+
+.admin-nota {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--rd-suave);
+}
+
+.admin-select {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--rd-linea);
+  border-radius: 12px;
+  font-family: var(--rd-titulos);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rd-tinta);
+  background: var(--rd-superficie);
 }

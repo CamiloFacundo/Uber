@@ -27,8 +27,13 @@ export class ClienteService {
   }
 
   // POST /client/ride-requests   (400 si ya tiene un viaje activo)
-  // service_type (confort, plus, premium) es un campo extra de AUREN; el backend puede ignorarlo.
-  solicitar(origen: Lugar, destino: Lugar, service_type: TipoServicio = 'confort'): Observable<SolicitudViaje> {
+  // service_type (moto, eco, confort, plus, van) y payment_method son extras de AUREN; el backend puede ignorarlos.
+  solicitar(
+    origen: Lugar,
+    destino: Lugar,
+    service_type: TipoServicio = 'confort',
+    payment_method: string = 'efectivo',
+  ): Observable<SolicitudViaje> {
     return this.api
       .post<{ ride_request: SolicitudViaje }>('client/ride-requests', {
         origin_name: origen.nombre,
@@ -38,6 +43,7 @@ export class ClienteService {
         destination_latitude: destino.lat,
         destination_longitude: destino.lng,
         service_type,
+        payment_method,
       })
       .pipe(map((r) => r.ride_request));
   }

@@ -1,0 +1,337 @@
+/* Seguimiento del viaje del pasajero. Colores --rd-* y tipografía en global.scss. */
+
+ion-content.viaje {
+  --background: var(--rd-fondo);
+  --color: var(--rd-tinta);
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+button,
+a {
+  font-family: inherit;
+}
+
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 12px) 18px calc(env(safe-area-inset-bottom) + 20px);
+}
+
+/* ---------- Encabezado ---------- */
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h1 {
+    flex: 1;
+    text-align: center;
+    font-size: 19px;
+    font-weight: 700;
+  }
+}
+
+.icono-boton {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 12px;
+  font-size: 21px;
+  text-decoration: none;
+  color: var(--rd-tinta);
+  background: var(--rd-superficie);
+  cursor: pointer;
+
+  &.vacio {
+    background: transparent;
+  }
+}
+
+/* ---------- Conductor ---------- */
+.conductor {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--rd-superficie);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  font-family: var(--rd-titulos);
+  font-size: 24px;
+  font-weight: 700;
+  color: #101827;
+  background: #c8a96a;
+  box-shadow: 0 0 0 3px var(--rd-primario);
+}
+
+.conductor-datos {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  strong {
+    font-family: var(--rd-titulos);
+    font-size: 17px;
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--rd-suave);
+  }
+
+  .calificacion ion-icon {
+    vertical-align: -2px;
+    color: var(--rd-sol);
+  }
+}
+
+// Placa del vehículo con estilo de placa colombiana
+.placa {
+  flex: none;
+  padding: 6px 10px;
+  border: 2px solid #101827;
+  border-radius: 6px;
+  font-family: var(--rd-titulos);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #101827;
+  background: #ffd43b;
+}
+
+.buscando {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--rd-superficie);
+
+  strong {
+    font-family: var(--rd-titulos);
+    font-size: 16px;
+  }
+
+  p {
+    margin-top: 2px;
+    font-size: 14px;
+    color: var(--rd-suave);
+  }
+}
+
+.pulso {
+  position: relative;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin: 0 6px;
+  border-radius: 50%;
+  background: var(--rd-primario);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--rd-primario);
+    animation: pulso 1.8s ease-out infinite;
+  }
+}
+
+@keyframes pulso {
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* ---------- Mapa ---------- */
+.mapa {
+  position: relative;
+  // altura fija: el mapa (100% de alto) necesita un contenedor con altura definida
+  height: 42vh;
+  min-height: 280px;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.eta {
+  position: absolute;
+  z-index: 500;
+  // abajo a la izquierda, para no tapar la ruta
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 24px);
+  padding: 10px 16px;
+  border: 1px solid rgba(200, 169, 106, 0.35);
+  border-radius: 16px;
+  color: #f5f2ea;
+  background: rgba(16, 24, 39, 0.92);
+  box-shadow: 0 6px 18px rgba(16, 24, 39, 0.35);
+
+  ion-icon {
+    flex: none;
+    font-size: 26px;
+    color: #c8a96a;
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  span {
+    font-size: 12px;
+    opacity: 0.85;
+  }
+
+  strong {
+    font-family: var(--rd-titulos);
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  small {
+    font-size: 12px;
+    opacity: 0.75;
+  }
+}
+
+/* ---------- Detalle ---------- */
+.detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--rd-superficie);
+}
+
+.detalle-cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  strong {
+    font-family: var(--rd-titulos);
+    font-size: 20px;
+  }
+}
+
+.insignia {
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rd-primario-texto);
+  background: var(--rd-primario-suave);
+}
+
+.parada {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 14px;
+}
+
+.punto {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+
+  &.origen {
+    border: 3px solid var(--rd-primario);
+    background: var(--rd-superficie);
+  }
+
+  &.destino {
+    background: var(--rd-sol);
+    box-shadow: 0 0 0 2px var(--rd-superficie), 0 0 0 3.5px var(--rd-sol);
+  }
+}
+
+/* ---------- Acciones ---------- */
+.acciones {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.accion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 84px;
+  padding: 10px 6px;
+  border: 1px solid var(--rd-linea);
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  color: var(--rd-tinta);
+  background: var(--rd-superficie);
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 26px;
+    color: var(--rd-primario);
+  }
+
+  &.peligro ion-icon {
+    color: var(--rd-alerta);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--rd-primario);
+    outline-offset: 2px;
+  }
+}
+
+.sin-viaje {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--rd-suave);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulso::after {
+    animation: none;
+  }
+}

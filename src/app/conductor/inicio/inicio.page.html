@@ -1,214 +1,256 @@
-<ion-content class="cd">
-  <header class="saludo">
-    <p>Hola, {{ primerNombre() }}</p>
-  </header>
+<ion-content class="cd" [fullscreen]="true">
+  @if (resumen(); as r) {
+    <!-- ================= 4. Viaje completado ================= -->
+    <div class="pagina">
+      <app-resumen-viaje [viaje]="r.viaje" [metodoPago]="r.metodo" (cerrar)="cerrarResumen()"></app-resumen-viaje>
+    </div>
+  } @else if (enCurso(); as ec) {
+    <!-- ================= 3. Navegación ================= -->
+    <div class="navegacion">
+      <div class="nav-mapa">
+        <app-mapa
+          [conductor]="miPosicion()"
+          [tipoVehiculo]="esMoto() ? 'moto' : 'car'"
+          [origen]="mapaOrigen()"
+          [destino]="mapaDestino()"
+        ></app-mapa>
 
-  <!-- Estado: se toca toda la franja para conectarse o desconectarse -->
-  <button
-    type="button"
-    class="estado"
-    role="switch"
-    [attr.aria-checked]="disponible()"
-    [class.en-linea]="disponible()"
-    [class.bloqueado]="!!enCurso()"
-    [disabled]="!!enCurso() || cambiandoDisponible()"
-    (click)="alternarDisponible()"
-  >
-    <span class="estado-texto">
-      <strong>{{ disponible() ? 'Estás en línea' : 'Estás desconectado' }}</strong>
-      <span>
-        @if (enCurso()) {
-          No puedes desconectarte durante un viaje
-        } @else if (disponible()) {
-          Toca para dejar de recibir viajes
-        } @else {
-          Toca para empezar a recibir viajes
-        }
-      </span>
-    </span>
-    <span class="estado-boton" aria-hidden="true">
-      @if (cambiandoDisponible()) {
-        <ion-spinner name="crescent"></ion-spinner>
-      } @else {
-        <ion-icon name="power"></ion-icon>
-      }
-    </span>
-  </button>
-
-  <!-- Mapa: tu posición, las solicitudes cercanas o la ruta del viaje en curso -->
-  <div class="mapa-tarjeta" [class.alto]="!!enCurso()">
-    <app-mapa
-      [yo]="miPosicion()"
-      [origen]="mapaOrigen()"
-      [destino]="mapaDestino()"
-      [extras]="mapaSolicitudes()"
-    ></app-mapa>
-  </div>
-
-  @if (!enCurso()) {
-    <!-- Resumen del día -->
-    <section class="resumen" aria-label="Resumen de hoy">
-      <div>
-        <span>Ganado hoy</span>
-        <strong>{{ hoy().ganancias | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
-      </div>
-      <div>
-        <span>Viajes hoy</span>
-        <strong>{{ hoy().viajes }}</strong>
-      </div>
-      <div>
-        <span>Últimos 7 días</span>
-        <strong>{{ semana() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
-      </div>
-    </section>
-  }
-
-  @if (enCurso(); as ec) {
-    <!-- ================= Viaje en curso ================= -->
-    <section class="viaje" aria-label="Viaje en curso">
-      <ol class="pasos">
-        @for (p of pasos; track p.estado; let i = $index) {
-          <li [class.hecho]="i < pasoActual()" [class.actual]="i === pasoActual()">{{ p.nombre }}</li>
-        }
-      </ol>
-
-      <h1 class="instruccion">{{ siguiente()?.titulo }}</h1>
-
-      <div class="cifras">
-        <div>
-          <strong>{{ (ec.viaje.final_fare ?? ec.viaje.estimated_fare ?? ec.solicitud.estimated_fare) | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
-          <span>tarifa estimada</span>
-        </div>
-        <div>
-          <strong>{{ ec.solicitud.estimated_distance_km | number: '1.1-1' }} km</strong>
-          <span>recorrido</span>
-        </div>
-        @if (ec.solicitud.estimated_duration_min) {
+        <div class="indicacion" role="status">
+          <span class="indicacion-icono" aria-hidden="true">
+            <ion-icon [name]="pasoActual() === 1 ? 'flag' : 'navigate'"></ion-icon>
+          </span>
           <div>
-            <strong>{{ ec.solicitud.estimated_duration_min }} min</strong>
-            <span>aprox.</span>
-          </div>
-        }
-      </div>
-
-      <div class="ruta" [class.tramo-destino]="pasoActual() === 2">
-        <div class="parada">
-          <span class="punto origen" aria-hidden="true"></span>
-          <div>
-            <span class="rotulo">Recoger en</span>
-            <p>{{ ec.solicitud.origin_name }}</p>
-          </div>
-        </div>
-        <div class="parada">
-          <span class="punto destino" aria-hidden="true"></span>
-          <div>
-            <span class="rotulo">Llevar a</span>
-            <p>{{ ec.solicitud.destination_name }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="navegar">
-        @if (enlaceGoogle(); as g) {
-          <a class="boton-navegar" [href]="g" target="_blank" rel="noopener">
-            <ion-icon name="logo-google"></ion-icon> Google Maps
-          </a>
-        }
-        @if (enlaceWaze(); as w) {
-          <a class="boton-navegar" [href]="w" target="_blank" rel="noopener">
-            <ion-icon name="navigate-circle"></ion-icon> Waze
-          </a>
-        }
-      </div>
-
-      @if (ec.solicitud.client; as c) {
-        <div class="pasajero">
-          <span class="avatar" aria-hidden="true">{{ c.name.charAt(0) }}</span>
-          <div class="pasajero-nombre">
-            <strong>{{ c.name }}</strong>
-            <span>Pasajero</span>
-          </div>
-          @if (telefono(ec.solicitud); as tel) {
-            <a class="llamar" [href]="tel" [attr.aria-label]="'Llamar a ' + c.name">
-              <ion-icon name="call"></ion-icon>
-            </a>
-          }
-        </div>
-      }
-
-      <!-- El pasajero solo puede cancelar antes de que el viaje inicie -->
-      @if (pasoActual() < 2) {
-        <button type="button" class="enlace-cancelado" (click)="descartar()">El pasajero canceló el viaje</button>
-      }
-    </section>
-  } @else if (disponible()) {
-    <!-- ================= Solicitudes ================= -->
-    @if (solicitudes().length) {
-      <h2 class="titulo-lista">
-        {{ solicitudes().length === 1 ? '1 pasajero busca viaje' : solicitudes().length + ' pasajeros buscan viaje' }}
-      </h2>
-      @for (s of solicitudes(); track s.id) {
-        <article class="solicitud">
-          <div class="solicitud-cabeza">
-            <strong class="tarifa">{{ s.estimated_fare | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
-            <span class="distancia">
-              {{ s.estimated_distance_km | number: '1.1-1' }} km
-              @if (s.estimated_duration_min) {
-                <span>en {{ s.estimated_duration_min }} min</span>
+            <strong>{{ siguiente()?.titulo }}</strong>
+            <span>
+              @if (falta(); as f) {
+                {{ f.km | number: '1.1-1' }} km · {{ f.min }} min
+              } @else {
+                {{ siguiente()?.detalle }}
               }
             </span>
           </div>
+        </div>
+      </div>
 
-          <div class="ruta compacta">
-            <div class="parada">
-              <span class="punto origen" aria-hidden="true"></span>
-              <p>{{ s.origin_name }}</p>
+      <div class="nav-hoja">
+        <ol class="progreso" aria-label="Progreso del viaje">
+          @for (p of pasos; track p; let i = $index) {
+            <li [class.hecho]="i < pasoActual()" [class.actual]="i === pasoActual()" [attr.aria-current]="i === pasoActual() ? 'step' : null">
+              <span class="marca" aria-hidden="true"></span>{{ p }}
+            </li>
+          }
+        </ol>
+
+        @if (ec.solicitud.client; as c) {
+          <div class="pasajero">
+            <span class="avatar" aria-hidden="true">{{ c.name.charAt(0) }}</span>
+            <div class="pasajero-nombre">
+              <strong>{{ c.name }}</strong>
+              <span>{{ siguiente()?.detalle }}</span>
             </div>
-            <div class="parada">
-              <span class="punto destino" aria-hidden="true"></span>
-              <p>{{ s.destination_name }}</p>
+            @if (telefono(); as tel) {
+              <a class="circulo" [href]="'sms:' + tel" [attr.aria-label]="'Enviar mensaje a ' + c.name">
+                <ion-icon name="chatbubble-ellipses"></ion-icon>
+              </a>
+              <a class="circulo principal" [href]="'tel:' + tel" [attr.aria-label]="'Llamar a ' + c.name">
+                <ion-icon name="call"></ion-icon>
+              </a>
+            }
+          </div>
+        }
+
+        <div class="ruta tarjeta-ruta" [class.tramo-destino]="pasoActual() === 1">
+          <div class="parada">
+            <span class="punto origen" aria-hidden="true"></span>
+            <div>
+              <span class="rotulo">Recoger en</span>
+              <p>{{ ec.solicitud.origin_name }}</p>
             </div>
           </div>
+          <div class="parada">
+            <span class="punto destino" aria-hidden="true"></span>
+            <div>
+              <span class="rotulo">Destino</span>
+              <p>{{ ec.solicitud.destination_name }}</p>
+            </div>
+          </div>
+        </div>
 
-          @if (s.client) {
-            <p class="solicitud-cliente"><ion-icon name="person"></ion-icon> {{ s.client.name }}</p>
+        <div class="nav-cifras">
+          <div>
+            <span>Pago estimado</span>
+            <strong>{{ tarifaViaje() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+          </div>
+          <div>
+            <span>Tu ganancia</span>
+            <strong class="dorado">{{ comision.desglose(tarifaViaje()).neto | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+          </div>
+        </div>
+
+        <div class="navegar">
+          @if (enlaceGoogle(); as g) {
+            <a class="boton-navegar" [href]="g" target="_blank" rel="noopener">
+              <ion-icon name="logo-google" aria-hidden="true"></ion-icon> Google Maps
+            </a>
           }
+          @if (enlaceWaze(); as w) {
+            <a class="boton-navegar" [href]="w" target="_blank" rel="noopener">
+              <ion-icon name="navigate-circle" aria-hidden="true"></ion-icon> Waze
+            </a>
+          }
+        </div>
 
-          <button type="button" class="accion" [disabled]="procesando() !== null" (click)="aceptar(s)">
-            @if (procesando() === s.id) {
-              <ion-spinner name="crescent"></ion-spinner>
-            } @else {
-              Aceptar viaje
-            }
-          </button>
-        </article>
-      }
-    } @else {
-      <div class="esperando">
-        <div class="radar" aria-hidden="true"><ion-icon name="navigate"></ion-icon></div>
-        <h2>Buscando pasajeros cerca de ti</h2>
-        <p>Cuando alguien pida un viaje aparecerá aquí y el celular vibrará.</p>
+        <!-- El pasajero solo puede cancelar antes de que el viaje inicie -->
+        @if (pasoActual() === 0) {
+          <button type="button" class="enlace-cancelado" (click)="descartar()">El pasajero canceló el viaje</button>
+        }
       </div>
-    }
+    </div>
   } @else {
-    <!-- ================= Desconectado ================= -->
-    <div class="desconectado">
-      <h2>Conéctate para recibir viajes</h2>
-      <p>Toca la franja de arriba. Mientras estés en línea, las solicitudes cercanas aparecerán en esta pantalla.</p>
-      <p class="nota">Si acabas de registrarte, un administrador debe aprobar tu cuenta antes de que puedas conectarte.</p>
+    <!-- ================= 1. Panel del conductor ================= -->
+    <div class="pagina">
+      <header class="cabecera">
+        <app-logo [alto]="28"></app-logo>
+        <span class="chip-estado" [class.en-linea]="disponible()">
+          <span class="punto-estado" aria-hidden="true"></span>{{ disponible() ? 'En línea' : 'Desconectado' }}
+        </span>
+      </header>
+
+      <section class="perfil" aria-label="Tu perfil">
+        <span class="avatar grande" aria-hidden="true">{{ inicial() }}</span>
+        <div>
+          <h1>Hola, {{ primerNombre() }}</h1>
+          <p>
+            @if (perfil()?.rating_average; as r) {
+              <ion-icon name="star" class="estrella" aria-hidden="true"></ion-icon> {{ r | number: '1.1-2' }}
+              <span class="separador" aria-hidden="true"></span>
+            }
+            @if (vehiculo(); as v) {
+              {{ v.type === 'moto' ? 'AUREN Moto' : 'AUREN Car' }} · {{ v.plate }}
+            } @else {
+              Conductor AUREN
+            }
+          </p>
+        </div>
+      </section>
+
+      <!-- Interruptor En línea / Desconectado -->
+      <button
+        type="button"
+        class="interruptor"
+        role="switch"
+        [attr.aria-checked]="disponible()"
+        [class.en-linea]="disponible()"
+        [disabled]="cambiandoDisponible()"
+        (click)="alternarDisponible()"
+      >
+        <span class="interruptor-texto">
+          <strong>{{ disponible() ? 'Estás en línea' : 'Estás desconectado' }}</strong>
+          <span>{{ disponible() ? 'Recibiendo solicitudes cercanas' : 'Conéctate para recibir viajes' }}</span>
+        </span>
+        <span class="perilla" aria-hidden="true">
+          @if (cambiandoDisponible()) {
+            <ion-spinner name="crescent"></ion-spinner>
+          }
+        </span>
+      </button>
+
+      @if (sinAprobar()) {
+        <p class="aviso">
+          <ion-icon name="hourglass-outline" aria-hidden="true"></ion-icon>
+          Tu cuenta está en revisión. Un administrador debe aprobarte antes de que puedas recibir viajes.
+        </p>
+      }
+
+      @if (pendiente(); as s) {
+        <!-- ================= 2. Nueva solicitud ================= -->
+        <app-solicitud
+          [solicitud]="s"
+          [restante]="restante()"
+          [total]="tiempoRespuesta"
+          [yo]="miPosicion()"
+          [cola]="enCola()"
+          [procesando]="procesando() === s.id"
+          (aceptar)="aceptar()"
+          (rechazar)="rechazar()"
+        ></app-solicitud>
+      } @else {
+        <!-- Ganancias de hoy -->
+        <a class="ganancias" routerLink="/conductor/ganancias">
+          <div class="ganancias-cabeza">
+            <span>Ganancias de hoy</span>
+            <ion-icon name="chevron-forward" aria-hidden="true"></ion-icon>
+          </div>
+          <strong class="ganancias-total">{{ hoy().bruto | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+          <dl class="ganancias-datos">
+            <div>
+              <dt>Neto</dt>
+              <dd>{{ hoy().neto | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+            </div>
+            <div>
+              <dt>Viajes</dt>
+              <dd>{{ hoy().viajes }}</dd>
+            </div>
+            <div>
+              <dt>En línea</dt>
+              <dd>{{ duracion(hoy().minutos) }}</dd>
+            </div>
+          </dl>
+        </a>
+
+        <!-- Mapa con tu posición y las solicitudes cercanas -->
+        <div class="mapa-tarjeta">
+          <app-mapa [yo]="miPosicion()" [extras]="mapaSolicitudes()"></app-mapa>
+          <span class="mapa-estado">
+            @if (disponible()) {
+              <span class="pulso" aria-hidden="true"></span> Buscando pasajeros cerca de ti
+            } @else {
+              Desconectado
+            }
+          </span>
+        </div>
+
+        <!-- Accesos rápidos -->
+        <nav class="accesos" aria-label="Accesos rápidos">
+          <a routerLink="/conductor/ganancias"><span><ion-icon name="wallet-outline"></ion-icon></span>Ganancias</a>
+          <a routerLink="/conductor/viajes"><span><ion-icon name="time-outline"></ion-icon></span>Historial</a>
+          <a routerLink="/conductor/mapa"><span><ion-icon name="map-outline"></ion-icon></span>Mapa</a>
+          <a routerLink="/conductor/perfil"><span><ion-icon name="car-sport-outline"></ion-icon></span>Vehículo</a>
+        </nav>
+
+        <!-- Meta del día -->
+        <section class="meta" aria-label="Meta del día">
+          <ion-icon name="trophy-outline" aria-hidden="true"></ion-icon>
+          <div>
+            <strong>
+              @if (avanceMeta() >= 100) {
+                ¡Cumpliste tu meta de hoy!
+              } @else {
+                Meta del día: {{ meta | currency: 'COP' : 'symbol-narrow' : '1.0-0' }} netos
+              }
+            </strong>
+            <div class="barra-meta" role="progressbar" [attr.aria-valuenow]="avanceMeta()" aria-valuemin="0" aria-valuemax="100">
+              <span [style.width.%]="avanceMeta()"></span>
+            </div>
+            <small>Llevas el {{ avanceMeta() }}%</small>
+          </div>
+        </section>
+      }
     </div>
   }
 </ion-content>
 
 @if (siguiente(); as s) {
-  <!-- Botón principal fijo abajo, donde cae el pulgar -->
-  <ion-footer class="cd-pie">
-    <button type="button" class="accion grande" [disabled]="procesando() !== null" (click)="avanzar()">
-      @if (procesando() === 'viaje') {
-        <ion-spinner name="crescent"></ion-spinner>
-      } @else {
-        {{ s.boton }}
-      }
-    </button>
-  </ion-footer>
+  @if (!resumen()) {
+    <!-- Botón principal fijo abajo -->
+    <ion-footer class="cd-pie">
+      <button type="button" class="accion grande" [disabled]="procesando() !== null" (click)="avanzar()">
+        @if (procesando() === 'viaje') {
+          <ion-spinner name="crescent"></ion-spinner>
+        } @else {
+          {{ s.boton }}
+        }
+      </button>
+    </ion-footer>
+  }
 }

@@ -29,6 +29,8 @@ export interface Vehiculo {
   color?: string;
   year?: number;
   capacity?: number;
+  /** car | moto. Campo de AUREN; si el backend no lo envía se asume carro. */
+  type?: 'car' | 'moto';
 }
 
 export type EstadoAprobacion = 'pending' | 'approved' | 'suspended' | 'rejected';
@@ -88,6 +90,9 @@ export interface SolicitudViaje {
   estimated_fare: number;
   status?: EstadoViaje;
   created_at?: string;
+  /** moto, eco, confort, plus, van (campo extra de AUREN) */
+  service_type?: string;
+  payment_method?: string;
   client?: { name: string; phone?: string };
 }
 

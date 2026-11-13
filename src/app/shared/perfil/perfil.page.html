@@ -29,6 +29,17 @@
       </ion-item>
     </ion-list>
 
+    <ion-list inset>
+      <ion-list-header>Apariencia</ion-list-header>
+      <ion-item lines="none">
+        <ion-segment [value]="tema.modo()" (ionChange)="cambiarTema($event.detail.value)">
+          <ion-segment-button value="oscuro"><ion-label>Oscuro</ion-label></ion-segment-button>
+          <ion-segment-button value="claro"><ion-label>Claro</ion-label></ion-segment-button>
+          <ion-segment-button value="sistema"><ion-label>Automático</ion-label></ion-segment-button>
+        </ion-segment>
+      </ion-item>
+    </ion-list>
+
     <ion-button expand="block" color="danger" fill="outline" (click)="cerrarSesion()">
       <ion-icon name="log-out-outline" slot="start"></ion-icon>
       Cerrar sesión

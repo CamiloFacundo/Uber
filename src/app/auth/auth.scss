@@ -1,53 +1,67 @@
+/* Registro y recuperar contraseña: formulario centrado con los colores de AUREN (tokens --rd-* en global.scss). */
 .auth {
-  --background: var(--ion-background-color);
-}
-
-.marca {
-  text-align: center;
-  margin: 48px 0 24px;
-
-  ion-icon {
-    font-size: 64px;
-  }
-
-  h1 {
-    font-size: 40px;
-    font-weight: 800;
-    margin: 0;
-  }
-
-  p {
-    margin: 4px 0 0;
-    color: var(--ion-color-medium);
-  }
+  --background: var(--rd-fondo);
 }
 
 form,
-.prueba,
 .auth > p {
   max-width: 420px;
   margin-left: auto;
   margin-right: auto;
 }
 
-ion-button[type='submit'] {
-  margin-top: 16px;
+form > p {
+  margin: 0 0 10px;
+  font-weight: 600;
+  color: var(--rd-tinta);
 }
 
-.prueba {
-  margin-top: 32px;
-  text-align: center;
+ion-list {
+  margin-top: 16px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--rd-superficie);
+}
 
-  .botones {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin: 8px 0;
-  }
+ion-item {
+  --background: var(--rd-superficie);
+}
+
+ion-list-header {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+ion-segment {
+  --background: var(--rd-superficie);
+  border-radius: 12px;
+}
+
+ion-segment-button {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+// Botón principal dorado, igual que "Ingresar" en el login
+ion-button[type='submit'] {
+  --border-radius: 14px;
+  --box-shadow: none;
+  min-height: 52px;
+  margin-top: 20px;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .logo-cabecera {
   display: flex;
   justify-content: center;
   margin: 8px 0 20px;
+}
+
+ion-back-button {
+  text-transform: none;
+  letter-spacing: 0;
 }
