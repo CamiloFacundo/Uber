@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subscription, interval, startWith, switchMap } from 'rxjs';
+import { Subscription, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { IonContent, IonIcon, ModalController, NavController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { arrowBack, call, closeCircleOutline, shareSocialOutline, star, timeOutline } from 'ionicons/icons';
@@ -58,7 +58,7 @@ export class ClienteViajePage {
     const conductor = this.mapaConductor();
     const enViaje = v.status === 'in_progress';
     const meta = enViaje ? this.mapaDestino() : this.mapaOrigen();
-    if (v.status === 'driver_arrived') return { min: null, texto: 'Tu conductor ya llegó al punto de recogida' };
+    if (v.status === 'driver_arrived') return { min: null, texto: 'Tu conductor ya llegó por ti' };
     if (!conductor || !meta) return null;
     return {
       min: minutosEnCiudad(distanciaKm(conductor, meta)),
@@ -151,7 +151,12 @@ export class ClienteViajePage {
     this.polling?.unsubscribe();
     this.estado$.guardarRuta(null);
     if (anterior?.status === 'in_progress') {
-      const modal = await this.modales.create({ component: CalificarComponent, componentProps: { viaje: anterior } });
+      // /client/active ya no trae el viaje terminado: la tarifa final (final_fare) se lee del historial
+      const final = await firstValueFrom(this.cliente.historial())
+        .then((viajes) => viajes.find((v) => v.id === anterior.id))
+        .catch(() => undefined);
+      const viaje = { ...anterior, ...final, driver: anterior.driver ?? final?.driver, vehicle: anterior.vehicle ?? final?.vehicle };
+      const modal = await this.modales.create({ component: CalificarComponent, componentProps: { viaje } });
       await modal.present();
     } else if (anterior) {
       this.ui.toast('El viaje fue cancelado');
